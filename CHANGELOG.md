@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Transcript Processing Enhancement**: Major upgrade to video transcript processing pipeline
+  - **Segment Consolidation**: VTT segments are now consolidated into meaningful 1000+ character chunks for better embedding efficiency
+  - **AI-Powered Metadata Extraction**: Integration with Amazon Nova 2 Lite for intelligent content analysis
+    - Automatic extraction of speaker names from transcript content
+    - AWS service identification and categorization
+    - Topic classification and industry vertical detection
+    - Session type recognition (Workshop, Keynote, Breakout, etc.)
+  - **Title-Based Level Extraction**: Derives technical difficulty from video titles using AWS re:Invent session codes
+    - 1xx series → Introductory level
+    - 2xx series → Intermediate level  
+    - 3xx series → Advanced level
+    - 4xx series → Expert level
+  - **Sentence Boundary Splitting**: Intelligently splits long segments at sentence boundaries to stay within embedding model limits
+  - **Enhanced Property-Based Testing**: Comprehensive validation of segment processing, level mapping, and metadata enrichment
+  - **Improved Subtitle Processing**: Enhanced language detection and VTT parsing with better error handling
+
 ### Changed
 - **BREAKING**: Upgraded to AWS Bedrock Nova 2 Multimodal Embeddings model (`amazon.nova-2-multimodal-embeddings-v1:0`)
   - Updated API payload structure to use nova-multimodal-embed-v1 schema
@@ -26,8 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive subtitle availability checking
   - Improved error handling for subtitle extraction failures
   - Enhanced production readiness for real video content processing
+  - **NEW**: Improved subtitle language detection by removing restrictive language filtering
+  - **NEW**: Added segment consolidation to parseVTTContent method for better embedding efficiency
 
-### Added
 - New `build-all-reinvent.ts` script for processing ALL re:Invent 2025 videos without limits
   - Supports batch processing with configurable batch sizes
   - Comprehensive error handling and progress tracking
