@@ -279,7 +279,7 @@ export class DatabaseService implements IDatabaseService {
       
       if (videoCount.count > 0) {
         try {
-          this.db.exec('INSERT INTO videos_fts(videos_fts) VALUES("rebuild")')
+          this.db.exec("INSERT INTO videos_fts(videos_fts) VALUES('rebuild')")
         } catch (error) {
           // FTS rebuild might fail, continue with other optimizations
           console.warn('Failed to rebuild videos FTS index:', error)
@@ -288,7 +288,7 @@ export class DatabaseService implements IDatabaseService {
       
       if (segmentCount.count > 0) {
         try {
-          this.db.exec('INSERT INTO segments_fts(segments_fts) VALUES("rebuild")')
+          this.db.exec("INSERT INTO segments_fts(segments_fts) VALUES('rebuild')")
         } catch (error) {
           // FTS rebuild might fail, continue with other optimizations
           console.warn('Failed to rebuild segments FTS index:', error)
