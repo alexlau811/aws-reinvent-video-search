@@ -110,7 +110,7 @@
   - **Property 4: Filter application preserves constraints**
   - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
 
-- [-] 8. Build user interface components
+- [ ] 8. Build user interface components
 - [x] 8.1 Create search interface and results display
   - Implement search bar with auto-complete functionality
   - Create search results component with video information
@@ -118,7 +118,7 @@
   - Implement YouTube URL generation with timestamp parameters
   - _Requirements: 1.2, 1.3, 5.1, 5.2, 5.3_
 
-- [ ] 8.2 Write property test for search results rendering
+- [x] 8.2 Write property test for search results rendering
   - **Property 2: Search results contain required information**
   - **Validates: Requirements 1.2, 5.1, 5.3**
 

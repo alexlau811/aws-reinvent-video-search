@@ -3,11 +3,13 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 
 # Build outputs
 dist/
 build/
 *.tsbuildinfo
+.turbo/
 
 # Environment variables
 .env
@@ -15,20 +17,31 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
 
 # IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Logs
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Runtime data
 pids/
@@ -39,24 +52,31 @@ pids/
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
+.nyc_output/
 
 # Database files
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
 
 # Temporary files
 tmp/
 temp/
+.tmp/
 
 # Project-specific
 # Client app build artifacts
 packages/client-app/dist/
 packages/client-app/build/
+packages/client-app/.vite/
 
 # Data pipeline outputs
 packages/data-pipeline/dist/
 packages/data-pipeline/output/
+packages/data-pipeline/temp/
 
 # Database files (including compressed)
 *.db.gz
@@ -65,17 +85,53 @@ packages/data-pipeline/output/
 # Test outputs
 test-results/
 coverage/
+.coverage/
+junit.xml
 
 # Package manager files
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+.pnpm-store/
 
 # TypeScript cache
 *.tsbuildinfo
 
 # Vite cache
 .vite/
+vite.config.*.timestamp-*
 
 # ESLint cache
 .eslintcache
+
+# Vitest cache
+.vitest/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Local development
+.local/
+.cache/
+
+# AWS
+.aws/
+
+# Docker
+.dockerignore
+Dockerfile*
+
+# Misc
+*.tgz
+*.tar.gz
+.npmrc
+.yarnrc
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

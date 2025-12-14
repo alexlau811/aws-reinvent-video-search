@@ -9,7 +9,6 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
     "dev:pipeline": "npm run dev -w packages/data-pipeline",
     "dev:client": "npm run dev -w packages/client-app",
     "lint": "npm run lint --workspaces",

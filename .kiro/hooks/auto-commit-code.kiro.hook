@@ -1,21 +1,16 @@
 {
   "enabled": true,
-  "name": "Auto Commit Code",
-  "description": "Automatically commits code changes to git when source files are modified",
+  "name": "Auto Commit & Update",
+  "description": "Automatically commits changes, updates .gitignore to exclude unnecessary files, and updates README.md with proper project documentation when files are edited",
   "version": "1",
   "when": {
     "type": "fileEdited",
     "patterns": [
-      "packages/**/*.ts",
-      "packages/**/*.js",
-      "packages/**/*.json",
-      "packages/**/*.sql",
-      "*.md",
-      "*.json"
+      "**/*"
     ]
   },
   "then": {
-    "type": "runCommand",
-    "command": "git add . && git commit -m \"Auto-commit: Updated files\""
+    "type": "askAgent",
+    "prompt": "Files have been modified in the project. Please:\n1. Review the changes and commit them with an appropriate commit message\n2. Update the .gitignore file to ensure it properly excludes build artifacts, logs, environment files, and other unnecessary files\n3. Update the README.md file to reflect any new features, setup instructions, or project changes\n4. Ensure all documentation is current and accurate\n\nFocus on maintaining clean git history and comprehensive documentation."
   }
 }

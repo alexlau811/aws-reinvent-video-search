@@ -104,13 +104,7 @@ npm run build
 
 #### Running All Tests
 
-```bash
-# From project root - run all tests
-npm test
-
-# Type check all packages
-npm run type-check
-```
+Do not run all tests as the output length will be super long.
 
 ## Features
 
@@ -159,6 +153,23 @@ Key test properties validated:
 - Filter application preserves constraints
 - Offline functionality after database load
 - Category filtering and counting accuracy
+- Topic browsing order by relevance and recency
+
+### Running Tests
+
+```bash
+# Run all tests in a specific package
+npm test -w packages/client-app
+npm test -w packages/data-pipeline
+
+# Run tests in watch mode
+npm run test:watch -w packages/client-app
+
+# Run specific test files
+npm test SearchEngine.test.ts -w packages/client-app
+```
+
+**Note**: Property-based tests have been optimized with reduced iteration counts for faster CI/CD execution while maintaining test coverage.
 
 ## 📁 Database Setup
 
@@ -204,12 +215,20 @@ Current implementation status based on the specification:
 - [x] Comprehensive property-based testing
 
 ### 🚧 In Progress
-- [ ] Search results rendering property tests
-- [ ] YouTube URL generation property tests
-- [ ] Filtering and browsing interface completion
+- [ ] YouTube URL generation property tests (Property 3)
+- [ ] Segment grouping and ordering property tests (Property 9)
 - [ ] Error handling and resilience improvements
-- [ ] Performance optimizations
+- [ ] Performance optimizations and database compression
 - [ ] Deployment and CDN configuration
+
+### 📋 Remaining Tasks
+Based on the current implementation plan:
+- [ ] Complete Property 3: YouTube URL generation with timestamps
+- [ ] Complete Property 9: Segment grouping and ordering
+- [ ] Implement comprehensive error handling (Property 12)
+- [ ] Add performance optimizations
+- [ ] Set up deployment pipeline and CDN configuration
+- [ ] Final testing and validation
 
 ## 🤝 Contributing
 

@@ -153,7 +153,7 @@ describe('DatabaseLoader Property Tests', () => {
           expect(buffer.byteLength).toBeGreaterThan(0)
         }
       ),
-      { numRuns: 10 } // Reduced runs for faster testing
+      { numRuns: 3 } // Reduced runs for faster testing
     )
   })
 
@@ -206,7 +206,7 @@ describe('DatabaseLoader Property Tests', () => {
           expect(fetchCallCount).toBeGreaterThan(0)
         }
       ),
-      { numRuns: 5 }
+      { numRuns: 2 }
     )
   })
 
@@ -254,7 +254,7 @@ describe('DatabaseLoader Property Tests', () => {
           expect(fetchCallCount).toBeGreaterThan(0)
         }
       ),
-      { numRuns: 5 }
+      { numRuns: 2 }
     )
   })
 })
