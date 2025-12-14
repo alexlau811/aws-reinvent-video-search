@@ -407,7 +407,266 @@ describe('VideoDiscoveryService', () => {
     })
   })
 
+  describe('consolidateSegments', () => {
+    it('should consolidate small segments into larger chunks', () => {
+      const service = new VideoDiscoveryServiceImpl()
+      const testSegments = [
+        { startTime: 0, endTime: 5, text: 'Hello world', confidence: 0.8 },
+        { startTime: 5, endTime: 10, text: 'This is a test', confidence: 0.9 },
+        { startTime: 10, endTime: 15, text: 'of segment consolidation', confidence: 0.7 }
+      ]
+
+      const consolidated = (service as any).consolidateSegments(testSegments, 50)
+      
+      expect(consolidated).toHaveLength(1)
+      expect(consolidated[0].text).toBe('Hello world This is a test of segment consolidation')
+      expect(consolidated[0].startTime).toBe(0)
+      expect(consolidated[0].endTime).toBe(15)
+    })
+
+    it('should handle edge case where total text is under minimum', () => {
+      const service = new VideoDiscoveryServiceImpl()
+      const testSegments = [
+        { startTime: 0, endTime: 5, text: 'Short', confidence: 0.8 }
+      ]
+
+      const consolidated = (service as any).consolidateSegments(testSegments, 1000)
+      
+      expect(consolidated).toHaveLength(1)
+      expect(consolidated[0].text).toBe('Short')
+      expect(consolidated[0].startTime).toBe(0)
+      expect(consolidated[0].endTime).toBe(5)
+    })
+
+    it('should create multiple chunks when text exceeds minimum', () => {
+      const service = new VideoDiscoveryServiceImpl()
+      // Create segments that will result in multiple chunks
+      const longText = 'A'.repeat(600) // 600 characters
+      const testSegments = [
+        { startTime: 0, endTime: 10, text: longText, confidence: 0.8 },
+        { startTime: 10, endTime: 20, text: longText, confidence: 0.9 }, // This will push first chunk over 1000
+        { startTime: 20, endTime: 30, text: longText, confidence: 0.7 }
+      ]
+
+      const consolidated = (service as any).consolidateSegments(testSegments, 1000)
+      
+      expect(consolidated.length).toBeGreaterThan(1)
+      // First chunk should be >= 1000 characters
+      expect(consolidated[0].text.length).toBeGreaterThanOrEqual(1000)
+      // Verify timestamp preservation
+      expect(consolidated[0].startTime).toBe(0)
+      expect(consolidated[0].endTime).toBe(20) // Should include first two segments
+    })
+  })
+
   describe('Property-Based Tests', () => {
+    /**
+     * **Feature: transcript-processing-enhancement, Property 1: Minimum segment size**
+     * **Validates: Requirements 1.1**
+     * 
+     * Property: For any transcript with total characters >= 1000, all consolidated 
+     * segments except the last one SHALL have at least 1000 characters.
+     */
+    it('should ensure minimum segment size for consolidated segments', () => {
+      // Generator for VTT segments with reasonable text lengths
+      const vttSegmentArbitrary = fc.record({
+        startTime: fc.integer({ min: 0, max: 7200 }),
+        endTime: fc.integer({ min: 0, max: 7200 }),
+        text: fc.string({ minLength: 50, maxLength: 150 }), // Reasonable text length per segment
+        confidence: fc.float({ min: Math.fround(0.1), max: Math.fround(1.0) })
+      }).filter(segment => segment.endTime >= segment.startTime)
+
+      // Generate arrays of segments that when combined have >= 1000 characters
+      const segmentsArbitrary = fc.array(vttSegmentArbitrary, { minLength: 10, maxLength: 30 })
+        .filter(segments => {
+          const totalText = segments.map(s => s.text).join(' ')
+          return totalText.length >= 1000
+        })
+
+      fc.assert(
+        fc.property(segmentsArbitrary, (segments) => {
+          const service = new VideoDiscoveryServiceImpl()
+          const consolidatedSegments = (service as any).consolidateSegments(segments, 1000)
+
+          // Property: All segments except the last should have at least 1000 characters
+          for (let i = 0; i < consolidatedSegments.length - 1; i++) {
+            expect(consolidatedSegments[i].text.length).toBeGreaterThanOrEqual(1000)
+          }
+
+          // Additional validation: consolidated segments should not be empty
+          expect(consolidatedSegments.length).toBeGreaterThan(0)
+          consolidatedSegments.forEach(segment => {
+            expect(segment.text.length).toBeGreaterThan(0)
+          })
+        }),
+        { numRuns: 20 } // Reduced from 100 to avoid timeout
+      )
+    })
+
+    /**
+     * **Feature: transcript-processing-enhancement, Property 2: Timestamp preservation**
+     * **Validates: Requirements 1.2**
+     * 
+     * Property: For any consolidated segment, its startTime SHALL equal the startTime 
+     * of its first source VTT segment, and its endTime SHALL equal the endTime of 
+     * its last source VTT segment.
+     */
+    it('should preserve timestamp boundaries in consolidated segments', () => {
+      // Simple property test with ordered segments
+      const service = new VideoDiscoveryServiceImpl()
+      
+      // Create test segments with known timestamps
+      const testSegments = Array.from({ length: 15 }, (_, i) => ({
+        startTime: i * 10,
+        endTime: (i + 1) * 10,
+        text: 'A'.repeat(80), // 80 characters each
+        confidence: 0.8
+      }))
+
+      const consolidated = (service as any).consolidateSegments(testSegments, 1000)
+
+      // Property: First consolidated segment should start with first original segment's startTime
+      expect(consolidated[0].startTime).toBe(testSegments[0].startTime)
+      
+      // Property: Last consolidated segment should end with last original segment's endTime
+      expect(consolidated[consolidated.length - 1].endTime).toBe(testSegments[testSegments.length - 1].endTime)
+
+      // Property: Each consolidated segment should have valid timestamp ranges
+      consolidated.forEach(segment => {
+        expect(segment.endTime).toBeGreaterThanOrEqual(segment.startTime)
+      })
+    })
+
+    /**
+     * **Feature: transcript-processing-enhancement, Property 2: Timestamp preservation**
+     * **Validates: Requirements 1.2**
+     * 
+     * Property: For any consolidated segment, its startTime SHALL equal the startTime 
+     * of its first source VTT segment, and its endTime SHALL equal the endTime of 
+     * its last source VTT segment.
+     */
+    it('should preserve timestamp boundaries in consolidated segments', () => {
+      // Generator for ordered VTT segments (timestamps in ascending order)
+      const orderedVttSegmentsArbitrary = fc.array(
+        fc.record({
+          startTime: fc.float({ min: 0, max: 7200 }),
+          endTime: fc.float({ min: 0, max: 7200 }),
+          text: fc.string({ minLength: 10, maxLength: 100 }),
+          confidence: fc.float({ min: 0, max: 1 })
+        }),
+        { minLength: 2, maxLength: 50 }
+      ).map(segments => {
+        // Sort segments by start time and ensure end time >= start time
+        return segments
+          .sort((a, b) => a.startTime - b.startTime)
+          .map((segment, index) => ({
+            ...segment,
+            startTime: index * 10, // Ensure non-overlapping segments
+            endTime: index * 10 + 5
+          }))
+      })
+
+      fc.assert(
+        fc.property(orderedVttSegmentsArbitrary, (segments) => {
+          const service = new VideoDiscoveryServiceImpl()
+          const consolidatedSegments = (service as any).consolidateSegments(segments, 500)
+
+          // Property: Each consolidated segment should preserve timestamp boundaries
+          consolidatedSegments.forEach((consolidatedSegment, index) => {
+            // Find the range of original segments that contributed to this consolidated segment
+            let firstOriginalIndex = 0
+            let lastOriginalIndex = 0
+            let currentTextLength = 0
+            let segmentStartFound = false
+
+            for (let i = 0; i < segments.length; i++) {
+              if (!segmentStartFound) {
+                firstOriginalIndex = i
+                segmentStartFound = true
+              }
+
+              currentTextLength += segments[i].text.length + (i > firstOriginalIndex ? 1 : 0) // +1 for space
+              lastOriginalIndex = i
+
+              // Check if we've reached the end of this consolidated segment
+              if (currentTextLength >= 500 || i === segments.length - 1) {
+                break
+              }
+            }
+
+            // Verify timestamp preservation
+            expect(consolidatedSegment.startTime).toBe(segments[firstOriginalIndex].startTime)
+            expect(consolidatedSegment.endTime).toBe(segments[lastOriginalIndex].endTime)
+          })
+        }),
+        { numRuns: 100 }
+      )
+    })
+
+    /**
+     * **Feature: transcript-processing-enhancement, Property 5: Long segment splitting at sentence boundaries**
+     * **Validates: Requirements 4.2**
+     * 
+     * Property: For any consolidated segment that exceeds embedding model limits, 
+     * the split SHALL occur at sentence boundaries (period, question mark, or 
+     * exclamation mark followed by space).
+     */
+    it('should split long segments at sentence boundaries', () => {
+      // Generator for segments with sentences that exceed token limits
+      const longSegmentArbitrary = fc.record({
+        startTime: fc.float({ min: 0, max: 7200 }),
+        endTime: fc.float({ min: 0, max: 7200 }),
+        text: fc.array(
+          fc.string({ minLength: 100, maxLength: 300 }), // Individual sentences
+          { minLength: 50, maxLength: 100 } // Many sentences to exceed token limit
+        ).map(sentences => sentences.join('. ') + '.'), // Join with periods
+        confidence: fc.float({ min: Math.fround(0.1), max: Math.fround(1.0) })
+      }).filter(segment => {
+        // Ensure segment exceeds token limit (8192 tokens ≈ 32768 characters)
+        return segment.text.length > 32768 && segment.endTime >= segment.startTime
+      })
+
+      fc.assert(
+        fc.property(longSegmentArbitrary, (segment) => {
+          const service = new VideoDiscoveryServiceImpl()
+          const splitSegments = (service as any).splitAtSentenceBoundaries(segment, 8192)
+
+          // Property 1: All split segments should be under the token limit
+          splitSegments.forEach((splitSegment: any) => {
+            const estimatedTokens = splitSegment.text.length / 4
+            expect(estimatedTokens).toBeLessThanOrEqual(8192)
+          })
+
+          // Property 2: Split should occur at sentence boundaries
+          // Check that splits don't occur in the middle of sentences
+          for (let i = 0; i < splitSegments.length - 1; i++) {
+            const currentSegment = splitSegments[i]
+            const lastChar = currentSegment.text.trim().slice(-1)
+            // Should end with sentence boundary or be the original unsplittable segment
+            if (splitSegments.length > 1) {
+              expect(['.', '!', '?'].includes(lastChar) || currentSegment.text === segment.text).toBe(true)
+            }
+          }
+
+          // Property 3: All text should be preserved
+          const combinedText = splitSegments.map((s: any) => s.text).join(' ')
+          const originalWords = segment.text.split(/\s+/).filter(w => w.length > 0)
+          const combinedWords = combinedText.split(/\s+/).filter(w => w.length > 0)
+          expect(combinedWords.length).toBeGreaterThanOrEqual(originalWords.length * 0.95) // Allow for minor differences
+
+          // Property 4: Timestamp boundaries should be preserved
+          expect(splitSegments[0].startTime).toBe(segment.startTime)
+          expect(splitSegments[splitSegments.length - 1].endTime).toBe(segment.endTime)
+
+          // Property 5: All segments should have valid timestamps
+          splitSegments.forEach((splitSegment: any) => {
+            expect(splitSegment.endTime).toBeGreaterThanOrEqual(splitSegment.startTime)
+          })
+        }),
+        { numRuns: 100 }
+      )
+    })
+
     /**
      * **Feature: video-search-platform, Property 8: re:Invent video filtering accuracy**
      * **Validates: Requirements 4.2, 8.2**

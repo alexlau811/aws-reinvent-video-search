@@ -84,10 +84,14 @@ async function buildAllReInventDatabase(
               const videoMetadata = await enrichmentService.extractFromVideoMetadata(video)
               const enrichedMetadata = enrichmentService.combineMetadata(transcriptMetadata, videoMetadata)
               
+              // Extract level from title using session codes
+              const titleLevel = enrichmentService.extractLevelFromTitle(video.title)
+              const finalLevel = titleLevel !== 'Unknown' ? titleLevel : enrichedMetadata.level
+              
               // Update video with enriched metadata
               enrichedVideo = {
                 ...video,
-                level: enrichedMetadata.level,
+                level: finalLevel,
                 services: enrichedMetadata.services,
                 topics: enrichedMetadata.topics,
                 industry: enrichedMetadata.industry,

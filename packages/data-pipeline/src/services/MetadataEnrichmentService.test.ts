@@ -155,7 +155,78 @@ describe('MetadataEnrichmentService', () => {
     })
   })
 
+  describe('extractLevelFromTitle', () => {
+    it('should extract level from session codes in titles', () => {
+      const service = new MetadataEnrichmentServiceImpl()
+      
+      expect(service.extractLevelFromTitle('GBL206: Building Scalable Applications')).toBe('Intermediate')
+      expect(service.extractLevelFromTitle('WPS301: Advanced Workshop')).toBe('Advanced')
+      expect(service.extractLevelFromTitle('SEC401: Expert Security Practices')).toBe('Expert')
+      expect(service.extractLevelFromTitle('INT101: Introduction to AWS')).toBe('Introductory')
+      expect(service.extractLevelFromTitle('No session code here')).toBe('Unknown')
+      expect(service.extractLevelFromTitle('ABC999: Invalid level')).toBe('Unknown')
+    })
+  })
+
   describe('Property-Based Tests', () => {
+    /**
+     * **Feature: transcript-processing-enhancement, Property 3: Level mapping correctness**
+     * **Validates: Requirements 3.1, 3.3**
+     * 
+     * For any video title containing a session code with level indicator (1xx, 2xx, 3xx, 4xx), 
+     * the extracted level should correctly map to Introductory, Intermediate, Advanced, or Expert respectively
+     */
+    it('should correctly map session code level indicators to difficulty levels', () => {
+      fc.assert(
+        fc.property(
+          // Generate session codes with valid level indicators
+          fc.record({
+            prefix: fc.stringOf(fc.char().filter(c => /[A-Z]/.test(c)), { minLength: 2, maxLength: 4 }),
+            levelDigit: fc.integer({ min: 1, max: 4 }),
+            sessionNumber: fc.integer({ min: 0, max: 99 }),
+            title: fc.string({ minLength: 5, maxLength: 50 })
+          }),
+
+          ({ prefix, levelDigit, sessionNumber, title }) => {
+            const service = new MetadataEnrichmentServiceImpl()
+            
+            // Create session code like "GBL206", "WPS301", etc.
+            const sessionCode = `${prefix}${levelDigit}${sessionNumber.toString().padStart(2, '0')}`
+            const fullTitle = `${sessionCode}: ${title}`
+            
+            const extractedLevel = service.extractLevelFromTitle(fullTitle)
+            
+            // Property: Level digit should map correctly to difficulty level
+            switch (levelDigit) {
+              case 1:
+                if (extractedLevel !== 'Introductory') {
+                  throw new Error(`Level 1xx should map to Introductory, got ${extractedLevel} for ${sessionCode}`)
+                }
+                break
+              case 2:
+                if (extractedLevel !== 'Intermediate') {
+                  throw new Error(`Level 2xx should map to Intermediate, got ${extractedLevel} for ${sessionCode}`)
+                }
+                break
+              case 3:
+                if (extractedLevel !== 'Advanced') {
+                  throw new Error(`Level 3xx should map to Advanced, got ${extractedLevel} for ${sessionCode}`)
+                }
+                break
+              case 4:
+                if (extractedLevel !== 'Expert') {
+                  throw new Error(`Level 4xx should map to Expert, got ${extractedLevel} for ${sessionCode}`)
+                }
+                break
+              default:
+                throw new Error(`Unexpected level digit: ${levelDigit}`)
+            }
+          }
+        ),
+        { numRuns: 100 } // Run 100 iterations as specified in design document
+      )
+    })
+
     /**
      * **Feature: video-search-platform, Property 13: Metadata enrichment completeness**
      * **Validates: Requirements 4.3, 4.4**

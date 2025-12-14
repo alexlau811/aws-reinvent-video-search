@@ -225,7 +225,7 @@ export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
           videoUrl,
           '--write-subs',
           '--write-auto-subs', 
-          '--sub-langs', 'en',
+          // '--sub-langs', 'en',
           '--sub-format', 'vtt',
           '--skip-download',
           '-o', `${tempDir}/${tempFilename}`,
@@ -282,6 +282,183 @@ export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
   }
 
   /**
+   * Consolidate VTT segments into chunks of at least minChars characters
+   * @param segments - Array of VTT segments to consolidate
+   * @param minChars - Minimum character threshold for each chunk (default: 1000)
+   * @returns Array of consolidated segments
+   */
+  private consolidateSegments(
+    segments: Array<{
+      startTime: number
+      endTime: number
+      text: string
+      confidence: number
+    }>,
+    minChars: number = 1000
+  ): Array<{
+    startTime: number
+    endTime: number
+    text: string
+    confidence: number
+  }> {
+    if (segments.length === 0) {
+      return []
+    }
+
+    // Handle edge case where total transcript is under minChars
+    const totalText = segments.map(s => s.text).join(' ')
+    if (totalText.length < minChars) {
+      return [{
+        startTime: segments[0].startTime,
+        endTime: segments[segments.length - 1].endTime,
+        text: totalText,
+        confidence: segments.reduce((sum, s) => sum + s.confidence, 0) / segments.length
+      }]
+    }
+
+    const consolidated: Array<{
+      startTime: number
+      endTime: number
+      text: string
+      confidence: number
+    }> = []
+
+    let currentChunk = {
+      startTime: segments[0].startTime,
+      endTime: segments[0].endTime,
+      text: segments[0].text,
+      confidence: segments[0].confidence,
+      segmentCount: 1
+    }
+
+    for (let i = 1; i < segments.length; i++) {
+      const segment = segments[i]
+      const potentialText = currentChunk.text + ' ' + segment.text
+
+      // If current chunk is still under threshold, keep adding
+      if (currentChunk.text.length < minChars) {
+        currentChunk.text = potentialText
+        currentChunk.endTime = segment.endTime
+        currentChunk.confidence = (currentChunk.confidence * currentChunk.segmentCount + segment.confidence) / (currentChunk.segmentCount + 1)
+        currentChunk.segmentCount++
+      } else {
+        // Current chunk has reached minimum threshold, save it and start a new one
+        consolidated.push({
+          startTime: currentChunk.startTime,
+          endTime: currentChunk.endTime,
+          text: currentChunk.text,
+          confidence: currentChunk.confidence
+        })
+
+        currentChunk = {
+          startTime: segment.startTime,
+          endTime: segment.endTime,
+          text: segment.text,
+          confidence: segment.confidence,
+          segmentCount: 1
+        }
+      }
+    }
+
+    // Add the final chunk
+    consolidated.push({
+      startTime: currentChunk.startTime,
+      endTime: currentChunk.endTime,
+      text: currentChunk.text,
+      confidence: currentChunk.confidence
+    })
+
+    return consolidated
+  }
+
+  /**
+   * Split a segment at sentence boundaries if it exceeds embedding model limits
+   * @param segment - The segment to potentially split
+   * @param maxTokens - Maximum tokens allowed (default: 8192)
+   * @returns Array of split segments or original segment if under limit
+   */
+  private splitAtSentenceBoundaries(
+    segment: {
+      startTime: number
+      endTime: number
+      text: string
+      confidence: number
+    },
+    maxTokens: number = 8192
+  ): Array<{
+    startTime: number
+    endTime: number
+    text: string
+    confidence: number
+  }> {
+    // Rough estimation: 1 token ≈ 4 characters for English text
+    const estimatedTokens = segment.text.length / 4
+    
+    // If segment is under the limit, return as-is
+    if (estimatedTokens <= maxTokens) {
+      return [segment]
+    }
+
+    // Split at sentence boundaries: period, question mark, or exclamation mark followed by space
+    const sentences = segment.text.split(/([.!?]\s+)/).filter(part => part.trim().length > 0)
+    
+    if (sentences.length <= 1) {
+      // No sentence boundaries found, return original segment
+      return [segment]
+    }
+
+    const splitSegments: Array<{
+      startTime: number
+      endTime: number
+      text: string
+      confidence: number
+    }> = []
+
+    let currentText = ''
+    const segmentDuration = segment.endTime - segment.startTime
+    let segmentStartTime = segment.startTime
+
+    for (let i = 0; i < sentences.length; i++) {
+      const sentence = sentences[i]
+      const potentialText = currentText + sentence
+
+      // Check if adding this sentence would exceed the token limit
+      const potentialTokens = potentialText.length / 4
+      
+      if (potentialTokens > maxTokens && currentText.trim().length > 0) {
+        // Current text has reached the limit, save it as a segment
+        const textProgress = currentText.length / segment.text.length
+        const segmentEndTime = segment.startTime + (segmentDuration * textProgress)
+        
+        splitSegments.push({
+          startTime: segmentStartTime,
+          endTime: segmentEndTime,
+          text: currentText.trim(),
+          confidence: segment.confidence
+        })
+
+        // Start new segment
+        currentText = sentence
+        segmentStartTime = segmentEndTime
+      } else {
+        currentText = potentialText
+      }
+    }
+
+    // Add the final segment
+    if (currentText.trim().length > 0) {
+      splitSegments.push({
+        startTime: segmentStartTime,
+        endTime: segment.endTime,
+        text: currentText.trim(),
+        confidence: segment.confidence
+      })
+    }
+
+    return splitSegments.length > 0 ? splitSegments : [segment]
+  }
+
+  /**
    * Parse VTT subtitle content into transcript segments
    * @param vttContent - Raw VTT subtitle content
    * @returns TranscriptSegment[] - Parsed segments with timestamps
@@ -296,7 +473,7 @@ export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
     text: string
     confidence: number
   }> {
-    const segments: Array<{
+    const rawSegments: Array<{
       startTime: number
       endTime: number
       text: string
@@ -338,7 +515,7 @@ export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
         }
         
         if (textLines.length > 0) {
-          segments.push({
+          rawSegments.push({
             startTime,
             endTime,
             text: textLines.join(' '),
@@ -350,12 +527,17 @@ export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
       }
     }
     
-    console.log(`Parsed ${segments.length} segments from VTT content`)
-    if (segments.length > 0) {
-      console.log(`First segment: "${segments[0].text.substring(0, 50)}..."`)
+    console.log(`Parsed ${rawSegments.length} raw VTT segments`)
+    
+    // Consolidate segments into chunks of at least 1000 characters
+    const consolidatedSegments = this.consolidateSegments(rawSegments)
+    
+    console.log(`Consolidated into ${consolidatedSegments.length} segments`)
+    if (consolidatedSegments.length > 0) {
+      console.log(`First consolidated segment: "${consolidatedSegments[0].text.substring(0, 50)}..."`)
     }
     
-    return segments
+    return consolidatedSegments
   }
 
   /**

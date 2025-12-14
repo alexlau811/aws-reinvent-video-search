@@ -2,6 +2,7 @@
  * MetadataEnrichmentService - Extracts metadata from YouTube video transcripts using AI
  */
 
+import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime'
 import type { 
   ExtractedMetadata, 
   EnrichedMetadata 
@@ -9,7 +10,14 @@ import type {
 import type { MetadataEnrichmentService } from '../interfaces/index.js'
 
 export class MetadataEnrichmentServiceImpl implements MetadataEnrichmentService {
-  constructor() {}
+  private bedrockClient: BedrockRuntimeClient
+  private readonly MODEL_ID = 'amazon.nova-2-lite-v1:0'
+
+  constructor() {
+    this.bedrockClient = new BedrockRuntimeClient({
+      region: process.env.AWS_REGION || 'us-east-1'
+    })
+  }
 
   /**
    * Clean up resources (placeholder for interface compatibility)
@@ -19,11 +27,91 @@ export class MetadataEnrichmentServiceImpl implements MetadataEnrichmentService 
   }
 
   /**
-   * Extract metadata from transcript using AI analysis
-   * This is a placeholder implementation - in production, this would use AWS Bedrock
-   * to analyze the transcript and extract AWS services, topics, and technical level
+   * Extract metadata from transcript using Amazon Nova 2 Lite AI analysis
    */
   async extractFromTranscript(transcript: string): Promise<ExtractedMetadata> {
+    try {
+      // Use Nova 2 Lite for AI-powered extraction
+      return await this.extractFromTranscriptWithNova(transcript)
+    } catch (error) {
+      console.warn('Nova 2 Lite extraction failed, falling back to regex-based extraction:', error)
+      // Fallback to regex-based extraction
+      return this.extractFromTranscriptFallback(transcript)
+    }
+  }
+
+  /**
+   * Extract metadata from transcript using Amazon Nova 2 Lite
+   */
+  private async extractFromTranscriptWithNova(transcript: string): Promise<ExtractedMetadata> {
+    const prompt = `Analyze this AWS re:Invent session transcript and extract structured metadata. Return ONLY a valid JSON object with the following structure:
+
+{
+  "inferredServices": ["service1", "service2"],
+  "inferredTopics": ["topic1", "topic2"],
+  "inferredLevel": "Introductory|Intermediate|Advanced|Expert|Unknown",
+  "sessionType": "Breakout|Chalk Talk|Workshop|Keynote|Lightning Talk|Unknown",
+  "speakers": ["Speaker Name 1", "Speaker Name 2"],
+  "keyTerms": ["term1", "term2"],
+  "confidence": 0.85
+}
+
+Guidelines:
+- inferredServices: List AWS services mentioned (e.g., "Lambda", "S3", "DynamoDB")
+- inferredTopics: High-level themes (e.g., "Architecture", "Security", "Machine Learning")
+- inferredLevel: Technical difficulty based on content complexity
+- sessionType: Format of the session based on content style
+- speakers: Names of people presenting (extract from "I'm [name]" or similar)
+- keyTerms: Important technical terms and concepts
+- confidence: Your confidence in the extraction (0.0-1.0)
+
+Transcript:
+${transcript.substring(0, 8000)}`
+
+    const command = new ConverseCommand({
+      modelId: this.MODEL_ID,
+      messages: [
+        {
+          role: 'user',
+          content: [{ text: prompt }]
+        }
+      ],
+      inferenceConfig: {
+        maxTokens: 1000,
+        temperature: 0.1
+      }
+    })
+
+    const response = await this.bedrockClient.send(command)
+    
+    if (!response.output?.message?.content?.[0]?.text) {
+      throw new Error('No response from Nova 2 Lite')
+    }
+
+    const responseText = response.output.message.content[0].text
+    
+    try {
+      const extractedData = JSON.parse(responseText)
+      
+      // Validate and normalize the response
+      return {
+        inferredServices: Array.isArray(extractedData.inferredServices) ? extractedData.inferredServices : [],
+        inferredTopics: Array.isArray(extractedData.inferredTopics) ? extractedData.inferredTopics : [],
+        inferredLevel: this.normalizeLevel(extractedData.inferredLevel || 'Unknown') as ExtractedMetadata['inferredLevel'],
+        sessionType: this.normalizeSessionType(extractedData.sessionType || 'Unknown') as ExtractedMetadata['sessionType'],
+        speakers: Array.isArray(extractedData.speakers) ? extractedData.speakers : [],
+        keyTerms: Array.isArray(extractedData.keyTerms) ? extractedData.keyTerms : [],
+        confidence: typeof extractedData.confidence === 'number' ? Math.min(Math.max(extractedData.confidence, 0), 1) : 0.8
+      }
+    } catch (parseError) {
+      throw new Error(`Failed to parse Nova 2 Lite response: ${parseError}`)
+    }
+  }
+
+  /**
+   * Fallback extraction using regex-based analysis (original implementation)
+   */
+  private extractFromTranscriptFallback(transcript: string): ExtractedMetadata {
     // Analyze transcript content for AWS services
     const inferredServices = this.extractAWSServices(transcript)
     
@@ -344,6 +432,31 @@ export class MetadataEnrichmentServiceImpl implements MetadataEnrichmentService 
   }
 
   /**
+   * Normalize session type string to valid enum value
+   */
+  private normalizeSessionType(sessionType: string): 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown' {
+    const normalized = sessionType.toLowerCase().trim()
+    
+    if (normalized.includes('breakout')) {
+      return 'Breakout'
+    }
+    if (normalized.includes('chalk talk') || normalized.includes('chalktalk')) {
+      return 'Chalk Talk'
+    }
+    if (normalized.includes('workshop') || normalized.includes('hands-on')) {
+      return 'Workshop'
+    }
+    if (normalized.includes('keynote')) {
+      return 'Keynote'
+    }
+    if (normalized.includes('lightning')) {
+      return 'Lightning Talk'
+    }
+    
+    return 'Unknown'
+  }
+
+  /**
    * Infer session type from transcript content
    */
   private inferSessionTypeFromTranscript(transcript: string): 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown' {
@@ -446,5 +559,36 @@ export class MetadataEnrichmentServiceImpl implements MetadataEnrichmentService 
     }
     
     return [...new Set(speakers)]
+  }
+
+  /**
+   * Extract session level from video title using session codes
+   * Maps level indicators (1xx, 2xx, 3xx, 4xx) to difficulty levels
+   * @param title - Video title to extract level from
+   * @returns SessionLevel - Extracted level or 'Unknown' if not found
+   */
+  extractLevelFromTitle(title: string): 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unknown' {
+    // Look for session codes like "GBL206", "WPS301", "SEC401", etc.
+    const sessionCodePattern = /\b[A-Z]{2,4}(\d)(\d{2})\b/g
+    const matches = title.matchAll(sessionCodePattern)
+    
+    for (const match of matches) {
+      const levelDigit = parseInt(match[1])
+      
+      switch (levelDigit) {
+        case 1:
+          return 'Introductory'
+        case 2:
+          return 'Intermediate'
+        case 3:
+          return 'Advanced'
+        case 4:
+          return 'Expert'
+        default:
+          continue // Try next match if any
+      }
+    }
+    
+    return 'Unknown'
   }
 }
