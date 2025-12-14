@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Auto Commit Code",
+  "description": "Automatically commits code changes to git when source files are modified",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "packages/**/*.ts",
+      "packages/**/*.js",
+      "packages/**/*.json",
+      "packages/**/*.sql",
+      "*.md",
+      "*.json"
+    ]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "git add . && git commit -m \"Auto-commit: Updated files\""
+  }
+}
