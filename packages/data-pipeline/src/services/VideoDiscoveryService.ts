@@ -9,6 +9,7 @@ import YTDlpWrap from 'yt-dlp-wrap'
 import type { VideoMetadata, Transcript } from '@aws-reinvent-search/shared'
 import { VideoProcessingError } from '@aws-reinvent-search/shared'
 import type { VideoDiscoveryService } from '../interfaces/index.js'
+import path from 'path'
 
 export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
   private ytDlp: YTDlpWrap
@@ -234,47 +235,48 @@ export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
 
         // Read the VTT file that was created
         const fs = await import('fs')
-        const vttFilePath = `${tempDir}/${tempFilename}.en.vtt`
         
-        try {
+        const files = fs.readdirSync(tempDir)
+        const vttFilePath = files.find(file => 
+          file.startsWith(path.basename(tempFilename)) && file.endsWith('.vtt')
+        )
+
+        if (vttFilePath) {
           vttContent = fs.readFileSync(vttFilePath, 'utf8')
-        } catch (readError) {
-          console.log(`Could not read VTT file at ${vttFilePath}:`, readError)
+
+          // Clean up the temporary file
+          try {
+            fs.unlinkSync(vttFilePath)
+          } catch (cleanupError) {
+            console.warn(`Could not clean up temp file ${vttFilePath}:`, cleanupError)
+          }
+          
+          if (!vttContent || vttContent.trim() === '') {
+            console.log(`Empty subtitle content for video ${videoId}`)
+            return null
+          }
+          // Parse the VTT content into transcript segments
+          const segments = this.parseVTTContent(vttContent)
+          
+          if (segments.length === 0) {
+            console.log(`No transcript segments found for video ${videoId}`)
+            return null
+          }
+
+          return {
+            videoId,
+            language: 'en',
+            confidence: 0.8, // Moderate confidence for subtitles
+            segments
+          }
+        } else {
+          console.log(`Could not read VTT file at ${vttFilePath}:`)
           return null
         }
-        
-        // Clean up the temporary file
-        try {
-          fs.unlinkSync(vttFilePath)
-        } catch (cleanupError) {
-          console.warn(`Could not clean up temp file ${vttFilePath}:`, cleanupError)
-        }
-        
-        if (!vttContent || vttContent.trim() === '') {
-          console.log(`Empty subtitle content for video ${videoId}`)
-          return null
-        }
-        
       } catch (subtitleError) {
         console.log(`Failed to download subtitles for video ${videoId}:`, subtitleError)
         return null
       }
-      
-      // Parse the VTT content into transcript segments
-      const segments = this.parseVTTContent(vttContent)
-      
-      if (segments.length === 0) {
-        console.log(`No transcript segments found for video ${videoId}`)
-        return null
-      }
-
-      return {
-        videoId,
-        language: 'en',
-        confidence: 0.8, // Moderate confidence for subtitles
-        segments
-      }
-      
     } catch (error) {
       console.warn(`Failed to extract transcript for video ${videoId}:`, error)
       return null
