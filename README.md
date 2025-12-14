@@ -212,6 +212,27 @@ tsx src/build-real-db.ts playlist "https://youtube.com/playlist?list=PLhr1KZpdzu
 tsx src/build-real-db.ts ../client-app/public/database/custom-videos.db 50 aws-events
 ```
 
+#### Option 1a: Build ALL Videos from Channel/Playlist (New!)
+
+```bash
+cd packages/data-pipeline
+
+# Process ALL videos from a YouTube channel (no filtering)
+npm run build-all-videos "https://www.youtube.com/@channelname"
+
+# Process first 100 videos only
+npm run build-all-videos "https://www.youtube.com/@channelname" ./videos.db --max-videos 100
+
+# Skip transcripts for faster processing (metadata only)
+npm run build-all-videos "https://www.youtube.com/@channelname" ./videos.db --skip-transcripts
+
+# Process entire playlist with custom batch size
+npm run build-all-videos "https://www.youtube.com/playlist?list=PLxxxxxx" ./playlist.db --batch-size 10
+
+# Full example with all options
+npm run build-all-videos "https://www.youtube.com/@awsevents" ../client-app/public/database/aws-all-videos.db --max-videos 500 --batch-size 3
+```
+
 #### Option 2: Production Database Scripts
 
 ```bash
@@ -239,7 +260,9 @@ npm run create-production-db:simple
 **Production Database Features:**
 - **Real Data Processing**: Integrates with yt-dlp for actual video discovery and transcript extraction
 - **AWS Bedrock Integration**: Uses Nova 2 for vector embeddings and AI-powered metadata enrichment
-- **Batch Processing**: Processes videos in configurable batches for memory efficiency
+- **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos from channels/playlists without filtering
+- **Flexible Processing Options**: Skip transcripts for faster processing or include full transcript analysis
+- **Batch Processing**: Processes videos in configurable batches for memory efficiency (default: 5 videos per batch)
 - **Error Recovery**: Continues processing even if individual videos fail
 - **Progress Tracking**: Real-time progress reporting during database creation
 - **Automatic Backup**: Creates backups before overwriting existing databases

@@ -96,6 +96,32 @@ tsx src/build-real-db.ts playlist \
 tsx src/build-real-db.ts ../client-app/public/database/custom-videos.db 50 aws-events
 ```
 
+#### Option A2: Build ALL Videos from Channel/Playlist (New!)
+
+```bash
+# Process ALL videos from a YouTube channel (no content filtering)
+npm run build-all-videos "https://www.youtube.com/@awsevents"
+
+# Process first 500 videos with transcript extraction
+npm run build-all-videos \
+  "https://www.youtube.com/@awsevents" \
+  ../client-app/public/database/aws-all-videos.db \
+  --max-videos 500
+
+# Fast processing without transcripts (metadata only)
+npm run build-all-videos \
+  "https://www.youtube.com/@awsevents" \
+  ../client-app/public/database/aws-metadata-only.db \
+  --skip-transcripts \
+  --max-videos 1000
+
+# Process entire playlist with custom batch size
+npm run build-all-videos \
+  "https://www.youtube.com/playlist?list=PLhr1KZpdzukcaA06WloeNmGlnM_f1LrdP" \
+  ../client-app/public/database/reinvent-complete.db \
+  --batch-size 3
+```
+
 #### Option B: Production Database Scripts
 
 ```bash
@@ -119,6 +145,8 @@ tsx src/create-production-db.ts \
 **Real Data Processing Features:**
 - **Transcript Extraction**: Uses yt-dlp to extract actual video transcripts
 - **AI Metadata Enrichment**: Leverages AWS Bedrock for intelligent content analysis
+- **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos without content filtering
+- **Flexible Processing Modes**: Choose between full transcript analysis or metadata-only for faster processing
 - **Batch Processing**: Processes videos in configurable batches (default: 5 videos per batch)
 - **Error Recovery**: Continues processing even if individual videos fail
 - **Progress Tracking**: Real-time progress reporting during database creation
