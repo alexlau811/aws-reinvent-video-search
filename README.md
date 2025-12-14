@@ -195,7 +195,24 @@ This creates a sample database at `packages/client-app/public/database/reinvent-
 
 ### Production Database
 
-For production deployment, use the production database scripts:
+For production deployment, you have several options for creating databases with real video data:
+
+#### Option 1: Build from Real YouTube Data (Recommended)
+
+```bash
+cd packages/data-pipeline
+
+# Build from AWS Events channel
+tsx src/build-real-db.ts ../client-app/public/database/real-videos.db 100 aws-events
+
+# Build from specific YouTube playlist
+tsx src/build-real-db.ts playlist "https://youtube.com/playlist?list=PLhr1KZpdzukcaA06WloeNmGlnM_f1LrdP" ../client-app/public/database/reinvent-2024.db 100
+
+# Build with custom configuration
+tsx src/build-real-db.ts ../client-app/public/database/custom-videos.db 50 aws-events
+```
+
+#### Option 2: Production Database Scripts
 
 ```bash
 cd packages/data-pipeline
@@ -210,9 +227,21 @@ npm run create-production-db:full
 npm run verify-production-db [path-to-database]
 ```
 
+#### Option 3: Simple Production Database
+
+```bash
+cd packages/data-pipeline
+
+# Create optimized version from sample data
+npm run create-production-db:simple
+```
+
 **Production Database Features:**
-- **Real Data Processing**: Integrates with yt-dlp for actual video discovery
-- **AWS Bedrock Integration**: Uses Nova 2 for vector embeddings and metadata enrichment
+- **Real Data Processing**: Integrates with yt-dlp for actual video discovery and transcript extraction
+- **AWS Bedrock Integration**: Uses Nova 2 for vector embeddings and AI-powered metadata enrichment
+- **Batch Processing**: Processes videos in configurable batches for memory efficiency
+- **Error Recovery**: Continues processing even if individual videos fail
+- **Progress Tracking**: Real-time progress reporting during database creation
 - **Automatic Backup**: Creates backups before overwriting existing databases
 - **Compression**: Optimizes database size for CDN distribution
 - **Integrity Verification**: Validates database structure and content
@@ -245,7 +274,10 @@ npm run verify-production-db [path-to-database]
    # Set AWS region for Bedrock
    export AWS_REGION=us-east-1
    
-   # Create production database with full pipeline
+   # Option A: Build from real YouTube data (recommended)
+   tsx src/build-real-db.ts ../client-app/public/database/reinvent-videos.db 100
+   
+   # Option B: Use production database scripts
    npm run create-production-db:full
    ```
 
@@ -301,6 +333,8 @@ Current implementation status based on the specification:
 - [x] SQLite database with FTS5 search
 - [x] Database update and deployment services
 - [x] Production database management with backup and compression
+- [x] Real video data processing pipeline (build-real-db.ts)
+- [x] Batch processing with error recovery and progress tracking
 - [x] Database integrity verification and optimization
 - [x] React client application foundation
 - [x] Database loader with caching and progress tracking

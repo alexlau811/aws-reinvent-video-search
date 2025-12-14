@@ -186,6 +186,7 @@
   - Implement database backup and compression features
   - Add database verification and integrity checking
   - Create production deployment scripts with AWS integration
+  - Add build-real-db.ts script for processing real YouTube video data with batch processing and error recovery
   - _Requirements: All production deployment requirements_
 
 - [ ] 13. Final checkpoint - Ensure all tests pass
