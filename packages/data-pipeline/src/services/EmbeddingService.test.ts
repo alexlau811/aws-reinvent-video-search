@@ -36,7 +36,10 @@ describe('EmbeddingService', () => {
       const mockEmbedding = new Array(1024).fill(0).map(() => Math.random())
       mockSend.mockResolvedValue({
         body: new TextEncoder().encode(JSON.stringify({
-          embedding: mockEmbedding
+          embeddings: [{
+            embeddingType: 'TEXT',
+            embedding: mockEmbedding
+          }]
         }))
       })
 
@@ -63,12 +66,40 @@ describe('EmbeddingService', () => {
       
       mockSend.mockResolvedValue({
         body: new TextEncoder().encode(JSON.stringify({
-          embedding: mockEmbedding
+          embeddings: [{
+            embeddingType: 'TEXT',
+            embedding: mockEmbedding
+          }]
         }))
       })
 
       const result = await embeddingService.generateEmbeddings(longText)
       expect(result).toEqual(mockEmbedding)
+    })
+  })
+
+  describe('generateQueryEmbeddings', () => {
+    it('should generate query embeddings for valid text', async () => {
+      // Mock successful response
+      const mockEmbedding = new Array(1024).fill(0).map(() => Math.random())
+      mockSend.mockResolvedValue({
+        body: new TextEncoder().encode(JSON.stringify({
+          embeddings: [{
+            embeddingType: 'TEXT',
+            embedding: mockEmbedding
+          }]
+        }))
+      })
+
+      const result = await embeddingService.generateQueryEmbeddings('Search query text')
+      
+      expect(result).toEqual(mockEmbedding)
+      expect(mockSend).toHaveBeenCalledTimes(1)
+    })
+
+    it('should throw error for empty query text', async () => {
+      await expect(embeddingService.generateQueryEmbeddings('')).rejects.toThrow(VideoProcessingError)
+      await expect(embeddingService.generateQueryEmbeddings('   ')).rejects.toThrow(VideoProcessingError)
     })
   })
 
@@ -79,7 +110,10 @@ describe('EmbeddingService', () => {
       
       mockSend.mockResolvedValue({
         body: new TextEncoder().encode(JSON.stringify({
-          embedding: mockEmbedding
+          embeddings: [{
+            embeddingType: 'TEXT',
+            embedding: mockEmbedding
+          }]
         }))
       })
 
@@ -103,7 +137,10 @@ describe('EmbeddingService', () => {
       mockSend
         .mockResolvedValueOnce({
           body: new TextEncoder().encode(JSON.stringify({
-            embedding: mockEmbedding
+            embeddings: [{
+              embeddingType: 'TEXT',
+              embedding: mockEmbedding
+            }]
           }))
         })
         .mockRejectedValueOnce(new Error('API Error'))
