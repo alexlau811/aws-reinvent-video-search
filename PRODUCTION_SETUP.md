@@ -80,6 +80,24 @@ export AWS_REGION=us-east-1
 
 ### 3. Create Production Database
 
+#### Option A: Build from Real YouTube Data (Recommended)
+
+```bash
+# Build from AWS Events channel with real video data
+tsx src/build-real-db.ts ../client-app/public/database/reinvent-videos.db 100 aws-events
+
+# Build from specific YouTube playlist
+tsx src/build-real-db.ts playlist \
+  "https://youtube.com/playlist?list=PLhr1KZpdzukcaA06WloeNmGlnM_f1LrdP" \
+  ../client-app/public/database/reinvent-2024.db \
+  100
+
+# Build with custom batch size for memory management
+tsx src/build-real-db.ts ../client-app/public/database/custom-videos.db 50 aws-events
+```
+
+#### Option B: Production Database Scripts
+
 ```bash
 # Basic production database
 npm run create-production-db
@@ -97,6 +115,14 @@ tsx src/create-production-db.ts \
   --backup \
   --compression
 ```
+
+**Real Data Processing Features:**
+- **Transcript Extraction**: Uses yt-dlp to extract actual video transcripts
+- **AI Metadata Enrichment**: Leverages AWS Bedrock for intelligent content analysis
+- **Batch Processing**: Processes videos in configurable batches (default: 5 videos per batch)
+- **Error Recovery**: Continues processing even if individual videos fail
+- **Progress Tracking**: Real-time progress reporting during database creation
+- **Memory Efficient**: Processes and inserts data in batches to manage memory usage
 
 ### 4. Deploy to CDN
 
