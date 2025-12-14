@@ -6,7 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
+import * as fc from 'fast-check'
 import { VideoDiscoveryServiceImpl } from './VideoDiscoveryService.js'
+import type { VideoMetadata } from '@aws-reinvent-search/shared'
 
 describe('VideoDiscoveryService', () => {
   let service: VideoDiscoveryServiceImpl
@@ -305,7 +307,7 @@ describe('VideoDiscoveryService', () => {
           industry: ['Technology'],
           sessionType: 'Breakout' as const,
           speakers: ['Jane Smith'],
-          metadataSource: 'official' as const,
+          metadataSource: 'transcript' as const,
           metadataConfidence: 0.95,
           extractedKeywords: ['serverless', 'database', 'performance']
         }
@@ -362,7 +364,7 @@ describe('VideoDiscoveryService', () => {
           industry: ['Technology'],
           sessionType: 'Breakout' as const,
           speakers: ['Jane Smith'],
-          metadataSource: 'official' as const,
+          metadataSource: 'transcript' as const,
           metadataConfidence: 0.95,
           extractedKeywords: ['serverless']
         }
@@ -402,6 +404,90 @@ describe('VideoDiscoveryService', () => {
       
       expect(noExisting).toHaveLength(1)
       expect(noExisting[0].id).toBe('test1')
+    })
+  })
+
+  describe('Property-Based Tests', () => {
+    /**
+     * **Feature: video-search-platform, Property 8: re:Invent video filtering accuracy**
+     * **Validates: Requirements 4.2, 8.2**
+     * 
+     * Property: For any collection of video listings, only videos with titles 
+     * starting with "AWS re:Invent 2025" (case insensitive) should be included 
+     * in the filtered results.
+     */
+    it('should filter videos with re:Invent 2025 titles accurately across all inputs', () => {
+      // Generator for video metadata with various title patterns
+      const videoMetadataArbitrary = fc.record({
+        id: fc.string({ minLength: 1, maxLength: 20 }),
+        title: fc.oneof(
+          // Valid re:Invent 2025 titles (should be included)
+          fc.string().map(suffix => `AWS re:Invent 2025${suffix ? ' - ' + suffix : ''}`),
+          fc.string().map(suffix => `aws re:invent 2025${suffix ? ' - ' + suffix : ''}`),
+          fc.string().map(suffix => `AWS RE:INVENT 2025${suffix ? ' - ' + suffix : ''}`),
+          fc.string().map(suffix => `Aws Re:Invent 2025${suffix ? ' - ' + suffix : ''}`),
+          
+          // Invalid titles (should be excluded)
+          fc.string().filter(s => !s.toLowerCase().startsWith('aws re:invent 2025')),
+          fc.string().map(prefix => `${prefix} AWS re:Invent 2025`), // Doesn't start with pattern
+          fc.constant('AWS re:Invent 2024 - Previous Year'), // Wrong year
+          fc.constant('AWS re:Invent 2026 - Future Year'), // Wrong year
+          fc.constant('AWS re:Invent - No Year'), // No year
+          fc.constant('re:Invent 2025 - Missing AWS'), // Missing AWS prefix
+          fc.constant(''), // Empty title
+        ),
+        description: fc.string(),
+        channelId: fc.string({ minLength: 1 }),
+        channelTitle: fc.string({ minLength: 1 }),
+        publishedAt: fc.date(),
+        duration: fc.integer({ min: 0, max: 10800 }), // 0 to 3 hours
+        thumbnailUrl: fc.webUrl(),
+        youtubeUrl: fc.webUrl(),
+        level: fc.constantFrom('Introductory', 'Intermediate', 'Advanced', 'Expert', 'Unknown'),
+        services: fc.array(fc.string()),
+        topics: fc.array(fc.string()),
+        industry: fc.array(fc.string()),
+        sessionType: fc.constantFrom('Breakout', 'Chalk Talk', 'Workshop', 'Keynote', 'Lightning Talk', 'Unknown'),
+        speakers: fc.array(fc.string()),
+        metadataSource: fc.constantFrom('transcript', 'video-metadata', 'combined'),
+        metadataConfidence: fc.float({ min: 0, max: 1 }),
+        extractedKeywords: fc.array(fc.string())
+      }) as fc.Arbitrary<VideoMetadata>
+
+      // Generate arrays of video metadata
+      const videosArbitrary = fc.array(videoMetadataArbitrary, { minLength: 0, maxLength: 50 })
+
+      fc.assert(
+        fc.property(videosArbitrary, (videos) => {
+          const service = new VideoDiscoveryServiceImpl()
+          const filteredVideos = service.filterReInventVideos(videos)
+
+          // Property 1: All filtered videos must have titles starting with "AWS re:Invent 2025" (case insensitive)
+          filteredVideos.forEach(video => {
+            expect(video.title.toLowerCase().startsWith('aws re:invent 2025')).toBe(true)
+          })
+
+          // Property 2: No videos that don't start with "AWS re:Invent 2025" should be included
+          const expectedCount = videos.filter(video => 
+            video.title.toLowerCase().startsWith('aws re:invent 2025')
+          ).length
+          expect(filteredVideos.length).toBe(expectedCount)
+
+          // Property 3: Filtered videos should maintain their original metadata
+          filteredVideos.forEach(filteredVideo => {
+            const originalVideo = videos.find(v => v.id === filteredVideo.id)
+            expect(originalVideo).toBeDefined()
+            expect(filteredVideo).toEqual(originalVideo)
+          })
+
+          // Property 4: Order should be preserved from input
+          const originalReInventVideos = videos.filter(video => 
+            video.title.toLowerCase().startsWith('aws re:invent 2025')
+          )
+          expect(filteredVideos.map(v => v.id)).toEqual(originalReInventVideos.map(v => v.id))
+        }),
+        { numRuns: 100 } // Run 100 iterations as specified in design document
+      )
     })
   })
 })

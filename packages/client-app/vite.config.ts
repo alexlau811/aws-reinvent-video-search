@@ -3,13 +3,34 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'wasm-mime',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url?.endsWith('.wasm')) {
+            res.setHeader('Content-Type', 'application/wasm')
+          }
+          next()
+        })
+      }
+    }
+  ],
   optimizeDeps: {
-    exclude: ['sql.js']
+    exclude: ['@sqlite.org/sqlite-wasm']
   },
   server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp'
+    },
     fs: {
-      allow: ['..']
+      allow: ['..', '../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm']
     }
+  },
+  assetsInclude: ['**/*.wasm'],
+  define: {
+    global: 'globalThis'
   }
 })

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-A client-side video search and discovery platform that enables users to search through AWS re:Invent 2025 conference videos using semantic search, keyword matching, and metadata filtering. The system monitors the AWS Events Channel (@AWSEventsChannel) for videos titled "AWS re:Invent 2025" and operates entirely in the browser using a pre-built SQLite database served from a CDN, with daily batch updates for new content.
+A client-side video search and discovery platform that enables users to search through AWS re:Invent 2025 conference videos using semantic search, keyword matching, and metadata filtering. The system monitors the AWS Events Channel (@AWSEventsChannel) for videos titled "AWS re:Invent 2025" and operates entirely in the browser using a pre-built SQLite database served from a CDN, with daily batch updates for new content. All metadata is extracted directly from YouTube using yt-dlp, including video information and transcripts.
 
 ## Glossary
 
@@ -60,8 +60,8 @@ A client-side video search and discovery platform that enables users to search t
 
 1. WHEN the Data_Pipeline runs daily THEN the system SHALL use yt-dlp to fetch video listings from the AWS Events Channel
 2. WHEN channel listings are retrieved THEN the system SHALL filter for videos titled "AWS re:Invent 2025" and identify new videos not present in the current Content_Database
-3. WHEN new videos are discovered THEN the system SHALL download video metadata and transcribe audio content using AWS transcription services
-4. WHEN transcripts are generated THEN the system SHALL create embeddings for semantic search capabilities
+3. WHEN new videos are discovered THEN the system SHALL download video metadata and extract transcript content using yt-dlp
+4. WHEN transcripts are extracted THEN the system SHALL create embeddings for semantic search capabilities and extract metadata from transcript content
 5. WHEN video processing is complete THEN the system SHALL update the Content_Database and deploy to CDN
 6. WHEN processing errors occur THEN the system SHALL log failures and continue processing remaining videos
 

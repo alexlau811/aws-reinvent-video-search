@@ -29,13 +29,11 @@ graph TB
 The data pipeline runs as a scheduled job (daily) and performs the following operations:
 
 1. **Video Discovery**: Uses yt-dlp to fetch video listings from AWS Events Channel
-2. **Official Metadata Lookup**: Scrapes AWS official re:Invent site to find session details (level, services, topics, industry)
-3. **Content Processing**: Downloads metadata and audio for transcription
-4. **Transcription**: Uses AWS Transcribe for speech-to-text conversion
-5. **Metadata Enrichment**: Combines official metadata with transcript-extracted metadata using AI analysis
-6. **Embedding Generation**: Creates vector embeddings using AWS Bedrock (Nova 2) from enriched content
-7. **Database Update**: Updates SQLite database with enriched metadata and content
-8. **CDN Deployment**: Pushes updated database to CDN
+2. **Content Processing**: Downloads metadata and transcripts using yt-dlp
+3. **Metadata Enrichment**: Extracts metadata from transcript content using AI analysis
+4. **Embedding Generation**: Creates vector embeddings using AWS Bedrock (Nova 2) from transcript content
+5. **Database Update**: Updates SQLite database with extracted metadata and content
+6. **CDN Deployment**: Pushes updated database to CDN
 
 ### Client-Side Architecture
 
@@ -59,10 +57,10 @@ interface VideoDiscoveryService {
 }
 ```
 
-#### TranscriptionService
+#### TranscriptExtractionService
 ```typescript
-interface TranscriptionService {
-  transcribeVideo(videoId: string, audioUrl: string): Promise<Transcript>
+interface TranscriptExtractionService {
+  extractTranscript(videoId: string): Promise<Transcript>
   segmentTranscript(transcript: Transcript): VideoSegment[]
 }
 ```
@@ -70,31 +68,29 @@ interface TranscriptionService {
 #### MetadataEnrichmentService
 ```typescript
 interface MetadataEnrichmentService {
-  enrichFromAWSOfficial(videoTitle: string): Promise<OfficialMetadata | null>
   extractFromTranscript(transcript: string): Promise<ExtractedMetadata>
-  combineMetadata(official: OfficialMetadata | null, extracted: ExtractedMetadata): EnrichedMetadata
-}
-
-interface OfficialMetadata {
-  level: 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert'
-  services: string[]
-  topics: string[]
-  industry: string[]
-  sessionType: 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk'
-  speakers: string[]
-  officialDescription?: string
+  extractFromVideoMetadata(videoMetadata: any): Promise<ExtractedMetadata>
+  combineMetadata(transcriptMeta: ExtractedMetadata, videoMeta: ExtractedMetadata): EnrichedMetadata
 }
 
 interface ExtractedMetadata {
   inferredServices: string[]
   inferredTopics: string[]
-  inferredLevel: string
+  inferredLevel: 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unknown'
+  sessionType: 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown'
+  speakers: string[]
   keyTerms: string[]
   confidence: number
 }
 
-interface EnrichedMetadata extends OfficialMetadata {
-  dataSource: 'official' | 'transcript' | 'hybrid'
+interface EnrichedMetadata {
+  level: 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unknown'
+  services: string[]
+  topics: string[]
+  industry: string[]
+  sessionType: 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown'
+  speakers: string[]
+  dataSource: 'transcript' | 'video-metadata' | 'combined'
   confidence: number
   extractedKeywords: string[]
 }
@@ -156,7 +152,7 @@ interface SearchOptions {
   topics?: string[]
   industry?: string[]
   sessionType?: ('Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk')[]
-  metadataSource?: ('official' | 'transcript' | 'hybrid')[]
+  metadataSource?: ('transcript' | 'video-metadata' | 'combined')[]
   limit?: number
 }
 
@@ -201,7 +197,7 @@ interface VideoMetadata {
   speakers: string[]
   
   // Metadata source tracking
-  metadataSource: 'official' | 'transcript' | 'hybrid'
+  metadataSource: 'transcript' | 'video-metadata' | 'combined'
   metadataConfidence: number
   extractedKeywords: string[]
 }
@@ -345,7 +341,7 @@ After analyzing all acceptance criteria, several properties can be consolidated 
 **Validates: Requirements 8.3, 9.3**
 
 **Property 13: Metadata enrichment completeness**
-*For any* processed video, the system should attempt official AWS site lookup first, and if no official metadata is found, should extract metadata from transcript content, ensuring every video has level, services, topics, and session type information
+*For any* processed video, the system should extract metadata from both transcript content and video metadata using yt-dlp, ensuring every video has level, services, topics, and session type information
 **Validates: Requirements 4.3, 4.4**
 
 **Property 14: Metadata update preservation**
@@ -471,10 +467,8 @@ Unit tests will cover:
 
 **Data Pipeline**:
 - **Runtime**: Node.js with TypeScript
-- **Video Processing**: yt-dlp for YouTube integration
-- **Web Scraping**: Puppeteer or Playwright for AWS re:Invent site scraping
+- **Video Processing**: yt-dlp for YouTube integration and transcript extraction
 - **Metadata Extraction**: AWS Bedrock (Nova 2 Lite) for transcript analysis
-- **Transcription**: AWS Transcribe
 - **Embeddings**: AWS Bedrock (Nova 2) for semantic search
 - **Database**: SQLite with better-sqlite3
 - **Deployment**: AWS Lambda + EventBridge for scheduling
@@ -502,23 +496,24 @@ Unit tests will cover:
 
 ### Metadata Enrichment Strategy
 
-**Official AWS Site Integration**:
-- Scrape AWS re:Invent session catalog using video titles as lookup keys
-- Extract structured metadata: level, services, topics, industry, session type, speakers
-- Handle title variations and fuzzy matching for session lookup
-- Cache official metadata to reduce scraping frequency
+**yt-dlp Video Metadata Extraction**:
+- Extract comprehensive video metadata using yt-dlp including title, description, tags, and chapters
+- Parse video descriptions for session information and speaker details
+- Extract structured data from video tags and categories
+- Use video upload metadata and channel information
 
 **Transcript-Based Extraction**:
+- Use yt-dlp to extract transcript content directly from YouTube
 - Use AWS Bedrock (Nova 2 Lite) to analyze transcript content
 - Extract AWS services mentioned in the content
 - Infer technical level based on language complexity and concepts
 - Identify topics and industry focus from content analysis
 - Generate confidence scores for extracted metadata
 
-**Hybrid Metadata Strategy**:
-- Prioritize official AWS metadata when available (highest confidence)
-- Use transcript extraction as fallback for missing official data
-- Combine both sources for comprehensive metadata coverage
+**Combined Metadata Strategy**:
+- Combine video metadata and transcript analysis for comprehensive coverage
+- Use video description and tags as primary source for structured data
+- Use transcript analysis for deeper content understanding
 - Track metadata source and confidence for transparency
 
 **Metadata Quality Assurance**:

@@ -24,7 +24,7 @@ export interface VideoMetadata {
   speakers: string[]
   
   // Metadata source tracking
-  metadataSource: 'official' | 'transcript' | 'hybrid'
+  metadataSource: 'transcript' | 'video-metadata' | 'combined'
   metadataConfidence: number
   extractedKeywords: string[]
 }
@@ -58,26 +58,24 @@ export interface TranscriptSegment {
 }
 
 // Metadata enrichment interfaces
-export interface OfficialMetadata {
-  level: 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert'
-  services: string[]
-  topics: string[]
-  industry: string[]
-  sessionType: 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk'
-  speakers: string[]
-  officialDescription?: string
-}
-
 export interface ExtractedMetadata {
   inferredServices: string[]
   inferredTopics: string[]
-  inferredLevel: string
+  inferredLevel: 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unknown'
+  sessionType: 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown'
+  speakers: string[]
   keyTerms: string[]
   confidence: number
 }
 
-export interface EnrichedMetadata extends OfficialMetadata {
-  dataSource: 'official' | 'transcript' | 'hybrid'
+export interface EnrichedMetadata {
+  level: 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unknown'
+  services: string[]
+  topics: string[]
+  industry: string[]
+  sessionType: 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown'
+  speakers: string[]
+  dataSource: 'transcript' | 'video-metadata' | 'combined'
   confidence: number
   extractedKeywords: string[]
 }
@@ -86,13 +84,13 @@ export interface EnrichedMetadata extends OfficialMetadata {
 export interface SearchOptions {
   dateRange?: { start: Date; end: Date }
   channels?: string[]
-  duration?: { min: number; max: number }
+  duration?: { min?: number; max?: number }
   level?: ('Introductory' | 'Intermediate' | 'Advanced' | 'Expert')[]
   services?: string[]
   topics?: string[]
   industry?: string[]
   sessionType?: ('Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk')[]
-  metadataSource?: ('official' | 'transcript' | 'hybrid')[]
+  metadataSource?: ('transcript' | 'video-metadata' | 'combined')[]
   limit?: number
 }
 
@@ -102,13 +100,16 @@ export interface SearchResult {
   relevanceScore: number
 }
 
-// Database interfaces
+// Database interfaces for SQLite WASM
 export interface Database {
-  prepare(sql: string): Statement
-  exec(sql: string): void
+  exec(options: { sql: string; bind?: any[]; returnValue?: 'resultRows' | 'saveSql' }): any[]
   close(): void
+  // Optional methods for compatibility
+  deserialize?(data: Uint8Array): void
+  prepare?(sql: string): Statement
 }
 
+// Legacy interface for backward compatibility (deprecated)
 export interface Statement {
   run(...params: any[]): { changes: number; lastInsertRowid: number }
   get(...params: any[]): any

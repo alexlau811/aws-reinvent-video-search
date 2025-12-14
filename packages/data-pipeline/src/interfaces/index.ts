@@ -6,7 +6,6 @@ import type {
   VideoMetadata, 
   Transcript, 
   VideoSegment, 
-  OfficialMetadata, 
   ExtractedMetadata, 
   EnrichedMetadata 
 } from '@aws-reinvent-search/shared'
@@ -16,6 +15,8 @@ export interface VideoDiscoveryService {
   fetchChannelVideos(channelUrl: string): Promise<VideoMetadata[]>
   filterReInventVideos(videos: VideoMetadata[]): VideoMetadata[]
   identifyNewVideos(videos: VideoMetadata[], existing: VideoMetadata[]): VideoMetadata[]
+  extractTranscript(videoId: string): Promise<Transcript | null>
+  getTranscriptText(videoId: string): Promise<string | null>
 }
 
 // Transcription service interface
@@ -26,9 +27,9 @@ export interface TranscriptionService {
 
 // Metadata enrichment service interface
 export interface MetadataEnrichmentService {
-  enrichFromAWSOfficial(videoTitle: string): Promise<OfficialMetadata | null>
   extractFromTranscript(transcript: string): Promise<ExtractedMetadata>
-  combineMetadata(official: OfficialMetadata | null, extracted: ExtractedMetadata): EnrichedMetadata
+  extractFromVideoMetadata(videoMetadata: any): Promise<ExtractedMetadata>
+  combineMetadata(transcriptMeta: ExtractedMetadata, videoMeta: ExtractedMetadata): EnrichedMetadata
 }
 
 // Embedding service interface

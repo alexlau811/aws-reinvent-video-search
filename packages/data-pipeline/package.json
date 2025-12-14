@@ -8,17 +8,17 @@
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
+    "test": "vitest run",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "create-sample-db": "tsx src/create-sample-db.ts"
   },
   "dependencies": {
     "@aws-reinvent-search/shared": "file:../shared",
-    "@aws-sdk/client-transcribe": "^3.0.0",
+
     "@aws-sdk/client-bedrock-runtime": "^3.0.0",
     "better-sqlite3": "^9.0.0",
-    "puppeteer": "^21.0.0",
+
     "fast-check": "^3.0.0",
     "yt-dlp-wrap": "^2.0.0"
   },
