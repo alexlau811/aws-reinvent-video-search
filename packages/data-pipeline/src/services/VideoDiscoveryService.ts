@@ -212,47 +212,67 @@ export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
         return null
       }
 
-      // Try to extract English subtitles
-      // Use --print to get the subtitle content directly
-      const subtitleResult = await this.ytDlp.execPromise([
-        videoUrl,
-        '--write-subs',
-        '--write-auto-subs',
-        '--sub-langs', 'en',
-        '--sub-format', 'vtt',
-        '--skip-download',
-        '--print', '%(requested_subtitles.en.filepath)s',
-        '--no-warnings'
-      ])
-
-      if (!subtitleResult || subtitleResult.trim() === '') {
-        console.log(`Could not extract subtitle file path for video ${videoId}`)
-        return null
-      }
-
-      // Since we can't easily read the file from yt-dlp-wrap, let's use a different approach
-      // Get the subtitle content using --get-url for subtitles
+      // Use yt-dlp to download the subtitle file to a temporary location
+      console.log(`Downloading subtitles for video ${videoId}`)
+      
+      const tempDir = '/tmp'
+      const tempFilename = `transcript_${videoId}`
+      let vttContent: string
+      
       try {
-        const vttResult = await this.ytDlp.execPromise([
+        // Use yt-dlp to write subtitles to temp directory
+        await this.ytDlp.execPromise([
           videoUrl,
-          '--list-subs',
+          '--write-subs',
+          '--write-auto-subs', 
+          '--sub-langs', 'en',
+          '--sub-format', 'vtt',
+          '--skip-download',
+          '-o', `${tempDir}/${tempFilename}`,
           '--no-warnings'
         ])
 
-        if (!vttResult || !vttResult.includes('en')) {
-          console.log(`No English subtitles found for video ${videoId}`)
+        // Read the VTT file that was created
+        const fs = await import('fs')
+        const vttFilePath = `${tempDir}/${tempFilename}.en.vtt`
+        
+        try {
+          vttContent = fs.readFileSync(vttFilePath, 'utf8')
+        } catch (readError) {
+          console.log(`Could not read VTT file at ${vttFilePath}:`, readError)
           return null
         }
-
-        // For now, return null since we can't reliably extract subtitle content
-        // without writing to filesystem. This ensures we only return transcripts
-        // when they actually work.
-        console.log(`Subtitles detected for video ${videoId} but extraction not implemented`)
+        
+        // Clean up the temporary file
+        try {
+          fs.unlinkSync(vttFilePath)
+        } catch (cleanupError) {
+          console.warn(`Could not clean up temp file ${vttFilePath}:`, cleanupError)
+        }
+        
+        if (!vttContent || vttContent.trim() === '') {
+          console.log(`Empty subtitle content for video ${videoId}`)
+          return null
+        }
+        
+      } catch (subtitleError) {
+        console.log(`Failed to download subtitles for video ${videoId}:`, subtitleError)
         return null
-
-      } catch (listError) {
-        console.log(`Could not list subtitles for video ${videoId}:`, listError)
+      }
+      
+      // Parse the VTT content into transcript segments
+      const segments = this.parseVTTContent(vttContent)
+      
+      if (segments.length === 0) {
+        console.log(`No transcript segments found for video ${videoId}`)
         return null
+      }
+
+      return {
+        videoId,
+        language: 'en',
+        confidence: 0.8, // Moderate confidence for subtitles
+        segments
       }
       
     } catch (error) {
@@ -328,6 +348,11 @@ export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
       } else {
         i++
       }
+    }
+    
+    console.log(`Parsed ${segments.length} segments from VTT content`)
+    if (segments.length > 0) {
+      console.log(`First segment: "${segments[0].text.substring(0, 50)}..."`)
     }
     
     return segments
