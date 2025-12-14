@@ -48,3 +48,34 @@ coverage/
 # Temporary files
 tmp/
 temp/
+
+# Project-specific
+# Client app build artifacts
+packages/client-app/dist/
+packages/client-app/build/
+
+# Data pipeline outputs
+packages/data-pipeline/dist/
+packages/data-pipeline/output/
+
+# Database files (including compressed)
+*.db.gz
+*.sqlite.gz
+
+# Test outputs
+test-results/
+coverage/
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Vite cache
+.vite/
+
+# ESLint cache
+.eslintcache
