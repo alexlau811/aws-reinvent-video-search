@@ -32,7 +32,7 @@ export class EmbeddingServiceImpl implements EmbeddingService {
       )
     }
 
-    // Truncate text if too long (Nova Embed has token limits)
+    // Truncate text if too long (Nova 2 Multimodal Embeddings has token limits)
     const truncatedText = this.truncateText(text, 8000)
 
     let lastError: Error | undefined
@@ -83,7 +83,7 @@ export class EmbeddingServiceImpl implements EmbeddingService {
         } catch (error) {
           console.warn(`Failed to generate embedding for text ${i + index}:`, error)
           // Return zero vector as fallback
-          return new Array(1024).fill(0) // Nova Embed returns 1024-dimensional vectors
+          return new Array(1024).fill(0) // Nova 2 Multimodal Embeddings returns 1024-dimensional vectors
         }
       })
 
@@ -100,13 +100,19 @@ export class EmbeddingServiceImpl implements EmbeddingService {
   }
 
   /**
-   * Invoke the Nova Embed model via Bedrock
+   * Invoke the Nova 2 Multimodal Embeddings model via Bedrock
    */
   private async invokeEmbeddingModel(text: string): Promise<number[]> {
     const payload = {
-      inputText: text,
-      embeddingConfig: {
-        outputEmbeddingLength: 1024 // Nova Embed supports 256, 512, or 1024 dimensions
+      schemaVersion: "nova-multimodal-embed-v1",
+      taskType: "SINGLE_EMBEDDING",
+      singleEmbeddingParams: {
+        embeddingPurpose: "GENERIC_INDEX", // For indexing content in vector database
+        embeddingDimension: 1024,
+        text: {
+          truncationMode: "END", // Truncate from end if text is too long
+          value: text
+        }
       }
     }
 
