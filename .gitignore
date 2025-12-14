@@ -118,10 +118,41 @@ playwright/.cache/
 
 # AWS
 .aws/
+aws-exports.js
 
 # Docker
 .dockerignore
 Dockerfile*
+
+# Python (for yt-dlp and other tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Production database files
+packages/client-app/public/database/*.db
+packages/client-app/public/database/*.db.gz
+packages/client-app/public/database/*.json
+
+# Metrics and stats files
+*.metrics.json
+*.stats.json
+
+# CDN deployment artifacts
+deployment/
+cdn-output/
 
 # Misc
 *.tgz
@@ -135,3 +166,18 @@ Dockerfile*
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# macOS specific
+.AppleDouble
+.LSOverride
+Icon?
+
+# Windows specific
+desktop.ini
+$RECYCLE.BIN/
+
+# Linux specific
+*~
+.fuse_hidden*
+.directory
+.Trash-*

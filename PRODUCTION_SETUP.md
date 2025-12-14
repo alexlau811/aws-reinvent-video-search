@@ -78,6 +78,8 @@ export AWS_SECRET_ACCESS_KEY=your_secret
 export AWS_REGION=us-east-1
 ```
 
+**Note**: Ensure your AWS credentials have access to the `amazon.nova-2-multimodal-embeddings-v1:0` model in AWS Bedrock. The service uses the latest Nova 2 Multimodal Embeddings API with optimized schema for vector database indexing.
+
 ### 3. Create Production Database
 
 #### Option A: Build from Real YouTube Data (Recommended)
@@ -144,7 +146,7 @@ tsx src/create-production-db.ts \
 
 **Real Data Processing Features:**
 - **Transcript Extraction**: Uses yt-dlp to extract actual video transcripts
-- **AI Metadata Enrichment**: Leverages AWS Bedrock Nova 2 Multimodal Embeddings for intelligent content analysis
+- **AI Metadata Enrichment**: Leverages AWS Bedrock Nova 2 Multimodal Embeddings with optimized API schema for intelligent content analysis
 - **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos without content filtering
 - **Flexible Processing Modes**: Choose between full transcript analysis or metadata-only for faster processing
 - **Batch Processing**: Processes videos in configurable batches (default: 5 videos per batch)

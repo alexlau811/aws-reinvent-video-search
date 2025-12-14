@@ -259,7 +259,11 @@ npm run create-production-db:simple
 
 **Production Database Features:**
 - **Real Data Processing**: Integrates with yt-dlp for actual video discovery and transcript extraction
-- **AWS Bedrock Integration**: Uses Nova 2 Multimodal Embeddings for vector embeddings and AI-powered metadata enrichment
+- **AWS Bedrock Nova 2 Integration**: Uses latest Nova 2 Multimodal Embeddings model with optimized API schema
+  - 1024-dimensional embeddings for enhanced semantic search quality
+  - Proper API payload structure with nova-multimodal-embed-v1 schema
+  - Configured for GENERIC_INDEX embedding purpose for optimal vector database performance
+  - Enhanced text truncation and token management
 - **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos from channels/playlists without filtering
 - **Flexible Processing Options**: Skip transcripts for faster processing or include full transcript analysis
 - **Batch Processing**: Processes videos in configurable batches for memory efficiency (default: 5 videos per batch)
