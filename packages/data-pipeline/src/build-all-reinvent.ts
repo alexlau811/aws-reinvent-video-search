@@ -119,7 +119,7 @@ async function buildAllReInventDatabase(
                   
                   batchSegments.push(videoSegment)
                 } catch (embeddingError) {
-                  console.warn(`    ⚠️ Failed embedding for segment ${j + 1}:`, embeddingError.message)
+                  console.warn(`    ⚠️ Failed embedding for segment ${j + 1}:`, embeddingError instanceof Error ? embeddingError.message : 'Unknown error')
                 }
               }
               
