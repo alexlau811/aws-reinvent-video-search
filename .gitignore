@@ -150,6 +150,29 @@ packages/client-app/public/database/*.json
 *.metrics.json
 *.stats.json
 
+# yt-dlp downloads and temporary files
+*.vtt
+*.srt
+*.webm
+*.mp4
+*.mkv
+*.f4v
+*.part
+*.ytdl
+*.temp
+*.tmp
+
+# Subtitle and transcript files
+*.en.vtt
+*.en.srt
+*.auto.vtt
+*.auto.srt
+
+# Video processing temporary files
+video-temp/
+subtitle-temp/
+transcript-cache/
+
 # CDN deployment artifacts
 deployment/
 cdn-output/

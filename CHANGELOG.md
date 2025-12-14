@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Better error handling and rate limiting
   - Added text truncation mode configuration for better token management
 
+- **BREAKING**: Replaced mock transcript implementation with real yt-dlp subtitle extraction
+  - VideoDiscoveryService now attempts to extract actual YouTube subtitles
+  - Removed hardcoded mock transcripts in favor of real video data
+  - Added comprehensive subtitle availability checking
+  - Improved error handling for subtitle extraction failures
+  - Enhanced production readiness for real video content processing
+
 ### Added
 - New `build-all-reinvent.ts` script for processing ALL re:Invent 2025 videos without limits
   - Supports batch processing with configurable batch sizes
@@ -27,11 +34,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both transcript extraction and metadata-only processing modes
   - Compatible with Nova 2 Multimodal Embeddings
 
+- Real transcript extraction capabilities using yt-dlp
+  - Automatic detection of subtitle availability before extraction
+  - Support for both manual and auto-generated subtitles
+  - Proper error handling when subtitles are unavailable
+  - Enhanced video info checking for subtitle metadata
+
 ### Fixed
 - Fixed unused `retryDelay` variable in EmbeddingService by properly implementing retry logic
 - Updated all test files to use 1024-dimensional embeddings for Nova 2 compatibility
 - Updated database validation to expect 1024-dimensional embeddings
 - Updated sample database generation to create Nova 2 compatible embeddings
+- Improved null safety in getTranscriptText method with additional segment checks
 
 ## [1.0.0] - 2024-12-14
 

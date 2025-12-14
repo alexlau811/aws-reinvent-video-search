@@ -265,6 +265,10 @@ export class VideoDiscoveryServiceImpl implements VideoDiscoveryService {
    * Parse VTT subtitle content into transcript segments
    * @param vttContent - Raw VTT subtitle content
    * @returns TranscriptSegment[] - Parsed segments with timestamps
+   * 
+   * Note: This method is prepared for future use when subtitle content extraction is fully implemented.
+   * Currently, the extractTranscript method returns null when subtitles are detected but not extractable
+   * due to filesystem access limitations in the yt-dlp-wrap library.
    */
   private parseVTTContent(vttContent: string): Array<{
     startTime: number

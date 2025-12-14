@@ -145,7 +145,11 @@ tsx src/create-production-db.ts \
 ```
 
 **Real Data Processing Features:**
-- **Transcript Extraction**: Uses yt-dlp to extract actual video transcripts
+- **Real Transcript Extraction**: Uses yt-dlp to extract actual YouTube subtitles and captions
+  - Automatic subtitle availability detection before processing
+  - Support for both manual and auto-generated subtitles
+  - Robust error handling for videos without transcripts
+  - VTT and SRT format parsing capabilities
 - **AI Metadata Enrichment**: Leverages AWS Bedrock Nova 2 Multimodal Embeddings with optimized API schema for intelligent content analysis
 - **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos without content filtering
 - **Flexible Processing Modes**: Choose between full transcript analysis or metadata-only for faster processing
