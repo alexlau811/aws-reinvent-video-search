@@ -110,7 +110,7 @@ npm run build-all-videos \
   ../client-app/public/database/aws-all-videos.db \
   --max-videos 500
 
-# Fast processing without transcripts (metadata only)
+# Fast processing without transcripts (metadata only) - Note: Videos without transcripts will be skipped
 npm run build-all-videos \
   "https://www.youtube.com/@AWSEventsChannel" \
   ../client-app/public/database/aws-metadata-only.db \
@@ -150,11 +150,17 @@ tsx src/create-production-db.ts \
   - Support for both manual and auto-generated subtitles
   - Robust error handling for videos without transcripts
   - VTT and SRT format parsing capabilities
+  - **Quality Assurance**: Videos without transcripts are skipped to maintain database integrity
 - **AI Metadata Enrichment**: Leverages AWS Bedrock Nova 2 Multimodal Embeddings with optimized API schema for intelligent content analysis
+  - Type-safe metadata handling with proper const assertions
+  - Enhanced error handling with proper type checking
 - **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos without content filtering
 - **Flexible Processing Modes**: Choose between full transcript analysis or metadata-only for faster processing
 - **Batch Processing**: Processes videos in configurable batches (default: 5 videos per batch)
-- **Error Recovery**: Continues processing even if individual videos fail
+- **Enhanced Error Recovery**: 
+  - Continues processing even if individual videos fail
+  - Skips incomplete videos instead of adding partial data
+  - Improved error messages and logging
 - **Progress Tracking**: Real-time progress reporting during database creation
 - **Memory Efficient**: Processes and inserts data in batches to manage memory usage
 

@@ -263,15 +263,20 @@ npm run create-production-db:simple
   - **Subtitle Detection**: Automatically checks subtitle availability before processing
   - **Multi-format Support**: Handles both manual and auto-generated subtitle formats
   - **Robust Error Handling**: Gracefully handles videos without available transcripts
+  - **Quality Assurance**: Skips videos that fail processing to maintain database integrity
 - **AWS Bedrock Nova 2 Integration**: Uses latest Nova 2 Multimodal Embeddings model with optimized API schema
   - 1024-dimensional embeddings for enhanced semantic search quality
   - Proper API payload structure with nova-multimodal-embed-v1 schema
   - Configured for GENERIC_INDEX embedding purpose for optimal vector database performance
   - Enhanced text truncation and token management
+  - Type-safe metadata handling with proper const assertions
 - **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos from channels/playlists without filtering
 - **Flexible Processing Options**: Skip transcripts for faster processing or include full transcript analysis
 - **Batch Processing**: Processes videos in configurable batches for memory efficiency (default: 5 videos per batch)
-- **Error Recovery**: Continues processing even if individual videos fail
+- **Enhanced Error Recovery**: 
+  - Continues processing even if individual videos fail
+  - Skips incomplete videos instead of adding partial data
+  - Improved error messages with proper type checking
 - **Progress Tracking**: Real-time progress reporting during database creation
 - **Automatic Backup**: Creates backups before overwriting existing databases
 - **Compression**: Optimizes database size for CDN distribution

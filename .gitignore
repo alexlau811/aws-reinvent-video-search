@@ -172,10 +172,22 @@ packages/client-app/public/database/*.json
 video-temp/
 subtitle-temp/
 transcript-cache/
+*.cookies.txt
+*.info.json
+*.description
+*.annotations.xml
 
 # CDN deployment artifacts
 deployment/
 cdn-output/
+*.manifest.json
+version-*.json
+
+# AI/ML model cache and temporary files
+.embeddings-cache/
+model-cache/
+*.embedding
+*.vec
 
 # Misc
 *.tgz

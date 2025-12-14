@@ -46,6 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated database validation to expect 1024-dimensional embeddings
 - Updated sample database generation to create Nova 2 compatible embeddings
 - Improved null safety in getTranscriptText method with additional segment checks
+- **BREAKING**: Enhanced error handling in video processing scripts
+  - Fixed type safety in build-all-videos.ts with proper const assertions for metadata objects
+  - Improved error handling across all video processing scripts (build-all-videos, build-all-reinvent, build-real-db)
+  - Videos that fail processing are now skipped instead of adding incomplete data to maintain database quality
+  - Videos without transcripts are skipped when transcript processing is enabled for consistent behavior
+  - Enhanced error messages with proper instanceof Error checks
 
 ## [1.0.0] - 2024-12-14
 
