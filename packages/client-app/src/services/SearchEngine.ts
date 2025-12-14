@@ -576,7 +576,7 @@ export class SearchEngine {
     // Simple hash-based embedding simulation
     // This creates a consistent but basic representation of the query
     const words = query.toLowerCase().split(/\s+/)
-    const embedding = new Array(384).fill(0) // Common embedding dimension
+    const embedding = new Array(1024).fill(0) // Nova 2 Multimodal Embeddings dimension
     
     words.forEach((word, index) => {
       const hash = this.simpleHash(word)

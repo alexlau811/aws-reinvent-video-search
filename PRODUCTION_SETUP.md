@@ -305,7 +305,7 @@ CREATE TABLE video_segments (
   id TEXT PRIMARY KEY,
   video_id TEXT,
   text TEXT,
-  embedding vector(384),
+  embedding vector(1024),
   start_time REAL,
   end_time REAL
 );

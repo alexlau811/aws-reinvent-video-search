@@ -118,8 +118,8 @@ export class ProductionDatabaseService extends DatabaseService {
         throw new Error(`Invalid segment data: ${JSON.stringify(segment)}`)
       }
       
-      if (segment.embedding.length !== 384) {
-        throw new Error(`Invalid embedding dimension for segment ${segment.id}: expected 384, got ${segment.embedding.length}`)
+      if (segment.embedding.length !== 1024) {
+        throw new Error(`Invalid embedding dimension for segment ${segment.id}: expected 1024, got ${segment.embedding.length}`)
       }
     }
     

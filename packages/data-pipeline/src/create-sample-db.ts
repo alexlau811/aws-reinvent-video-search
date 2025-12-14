@@ -169,8 +169,8 @@ function generateSampleSegments(videoId: string, title: string, duration: number
     const endTime = Math.min(startTime + segmentDuration, duration)
     const text = texts[i % texts.length]
     
-    // Generate a simple embedding (384 dimensions with random values)
-    const embedding = Array.from({ length: 384 }, () => Math.random() * 2 - 1)
+    // Generate a simple embedding (1024 dimensions with random values for Nova 2 compatibility)
+    const embedding = Array.from({ length: 1024 }, () => Math.random() * 2 - 1)
     
     segments.push({
       id: `${videoId}_seg_${i + 1}`,
