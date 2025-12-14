@@ -259,9 +259,12 @@ npm run create-production-db:simple
 
 **Production Database Features:**
 - **Real Data Processing**: Integrates with yt-dlp for actual video discovery and transcript extraction
-  - **Real Transcript Extraction**: Extracts actual YouTube subtitles and auto-generated captions
+  - **Real Transcript Extraction**: Extracts actual YouTube subtitles and auto-generated captions using filesystem operations
   - **Subtitle Detection**: Automatically checks subtitle availability before processing
-  - **Multi-format Support**: Handles both manual and auto-generated subtitle formats
+  - **Multi-format Support**: Handles both manual and auto-generated subtitle formats (VTT, SRT)
+  - **Filesystem Integration**: Downloads and processes subtitle files through temporary directory operations
+  - **Automatic Cleanup**: Properly manages and cleans up temporary subtitle files after processing
+  - **Enhanced VTT Parsing**: Improved parsing with detailed logging and error handling
   - **Robust Error Handling**: Gracefully handles videos without available transcripts
   - **Quality Assurance**: Skips videos that fail processing to maintain database integrity
 - **AWS Bedrock Nova 2 Integration**: Uses latest Nova 2 Multimodal Embeddings model with optimized API schema

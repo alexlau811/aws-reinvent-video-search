@@ -145,9 +145,12 @@ tsx src/create-production-db.ts \
 ```
 
 **Real Data Processing Features:**
-- **Real Transcript Extraction**: Uses yt-dlp to extract actual YouTube subtitles and captions
+- **Real Transcript Extraction**: Uses yt-dlp to extract actual YouTube subtitles and captions with filesystem operations
   - Automatic subtitle availability detection before processing
   - Support for both manual and auto-generated subtitles
+  - Filesystem-based VTT file processing through temporary directories
+  - Automatic cleanup of temporary subtitle files after processing
+  - Enhanced VTT parsing with improved error handling and logging
   - Robust error handling for videos without transcripts
   - VTT and SRT format parsing capabilities
   - **Quality Assurance**: Videos without transcripts are skipped to maintain database integrity
@@ -167,16 +170,17 @@ tsx src/create-production-db.ts \
 ### 4. Deploy to CDN
 
 ```bash
-# Deploy to S3 + CloudFront
-tsx src/deploy-production-db.ts \
-  your-bucket-name \
-  ../client-app/public/database/reinvent-videos-prod.db \
-  your-cloudfront-distribution-id
+# Use production database creation scripts with CDN deployment
+npm run create-production-db:full
 
-# Environment variables for deployment
-export AWS_REGION=us-east-1
-export DB_KEY_PREFIX=database/
-tsx src/deploy-production-db.ts your-bucket-name /path/to/db.db
+# Or manually deploy using AWS CLI
+aws s3 cp ../client-app/public/database/reinvent-videos-prod.db \
+  s3://your-bucket-name/database/reinvent-videos-latest.db
+
+# Invalidate CloudFront cache
+aws cloudfront create-invalidation \
+  --distribution-id YOUR_DISTRIBUTION_ID \
+  --paths "/database/*"
 ```
 
 ### 5. Update Client Configuration

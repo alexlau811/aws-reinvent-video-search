@@ -34,9 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both transcript extraction and metadata-only processing modes
   - Compatible with Nova 2 Multimodal Embeddings
 
-- Real transcript extraction capabilities using yt-dlp
+- Real transcript extraction capabilities using yt-dlp with filesystem operations
   - Automatic detection of subtitle availability before extraction
   - Support for both manual and auto-generated subtitles
+  - Filesystem-based VTT file processing with temporary file management
+  - Proper cleanup of temporary subtitle files after processing
+  - Enhanced VTT parsing with improved logging and error handling
   - Proper error handling when subtitles are unavailable
   - Enhanced video info checking for subtitle metadata
 
@@ -48,6 +51,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved null safety in getTranscriptText method with additional segment checks
 - **BREAKING**: Enhanced error handling in video processing scripts
   - Fixed type safety in build-all-videos.ts with proper const assertions for metadata objects
+  - Improved error handling across all video processing scripts (build-all-videos, build-all-reinvent, build-real-db)
+  - Videos that fail processing are now skipped instead of adding incomplete data to maintain database quality
+  - Videos without transcripts are skipped when transcript processing is enabled for consistent behavior
+  - Enhanced error messages with proper instanceof Error checks
+
+### Removed
+- Removed `deploy-production-db.ts` script (functionality consolidated into other deployment scripts)
+- Cleaned up redundant deployment utilities in favor of streamlined production database creation
   - Improved error handling across all video processing scripts (build-all-videos, build-all-reinvent, build-real-db)
   - Videos that fail processing are now skipped instead of adding incomplete data to maintain database quality
   - Videos without transcripts are skipped when transcript processing is enabled for consistent behavior
