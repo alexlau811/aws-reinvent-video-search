@@ -122,50 +122,14 @@ async function buildAllVideosDatabase(
               console.log(`  ✅ Created ${transcript.segments.length} segments`)
               
             } else {
-              console.log('  ⚠️ No transcript available, using basic metadata')
-              
-              // Basic metadata enrichment only
-              const videoMetadata = await enrichmentService.extractFromVideoMetadata(video)
-              const basicEnriched = enrichmentService.combineMetadata(
-                { inferredServices: [], inferredTopics: [], inferredLevel: 'Unknown', sessionType: 'Unknown', speakers: [], keyTerms: [], confidence: 0.5 },
-                videoMetadata
-              )
-              
-              enrichedVideo = {
-                ...video,
-                level: basicEnriched.level,
-                services: basicEnriched.services,
-                topics: basicEnriched.topics,
-                industry: basicEnriched.industry,
-                sessionType: basicEnriched.sessionType,
-                speakers: basicEnriched.speakers,
-                metadataSource: 'video-metadata',
-                metadataConfidence: basicEnriched.confidence,
-                extractedKeywords: basicEnriched.extractedKeywords
-              }
+              console.log('  ⚠️ No transcript available, skipping video')
+              processedCount++
+              continue
             }
           } else {
-            console.log('  ⏭️ Skipping transcript (skipTranscripts=true)')
-            
-            // Just basic metadata enrichment
-            const videoMetadata = await enrichmentService.extractFromVideoMetadata(video)
-            const basicEnriched = enrichmentService.combineMetadata(
-              { inferredServices: [], inferredTopics: [], inferredLevel: 'Unknown', sessionType: 'Unknown', speakers: [], keyTerms: [], confidence: 0.5 },
-              videoMetadata
-            )
-            
-            enrichedVideo = {
-              ...video,
-              level: basicEnriched.level,
-              services: basicEnriched.services,
-              topics: basicEnriched.topics,
-              industry: basicEnriched.industry,
-              sessionType: basicEnriched.sessionType,
-              speakers: basicEnriched.speakers,
-              metadataSource: 'video-metadata',
-              metadataConfidence: basicEnriched.confidence,
-              extractedKeywords: basicEnriched.extractedKeywords
-            }
+            console.log('  ⏭️ Skipping transcript extraction (skipTranscripts=true), skipping video')
+            processedCount++
+            continue
           }
           
           batchVideos.push(enrichedVideo)
@@ -173,8 +137,7 @@ async function buildAllVideosDatabase(
           
         } catch (error) {
           console.error(`  ❌ Failed to process video:`, error instanceof Error ? error.message : 'Unknown error')
-          // Add basic video anyway
-          batchVideos.push(video)
+          // Skip video on error - only process videos that work completely
           processedCount++
         }
       }

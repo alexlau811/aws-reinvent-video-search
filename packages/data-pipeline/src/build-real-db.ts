@@ -152,8 +152,7 @@ async function buildRealDatabase(config: BuildConfig) {
           
         } catch (error) {
           console.error(`    ❌ Failed to process ${video.title}:`, error instanceof Error ? error.message : 'Unknown error')
-          // Still add basic video metadata
-          batchVideos.push(video)
+          // Skip video on error - only process videos that work completely
         }
       }
       
