@@ -175,6 +175,14 @@ packages/client-app/public/database/*.json
 *.en.srt
 *.auto.vtt
 *.auto.srt
+transcript_*
+*transcript*
+
+# yt-dlp temporary files and cache
+.yt-dlp/
+yt-dlp-cache/
+*.cookies
+*.netrc
 
 # Video processing temporary files
 video-temp/
@@ -196,6 +204,14 @@ version-*.json
 model-cache/
 *.embedding
 *.vec
+.bedrock-cache/
+.nova-cache/
+
+# AWS Bedrock and Nova model artifacts
+bedrock-temp/
+nova-temp/
+*.bedrock
+*.nova
 
 # Misc
 *.tgz

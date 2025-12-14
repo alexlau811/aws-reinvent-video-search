@@ -163,6 +163,12 @@ Key test properties validated:
 - Offline functionality after database load
 - Category filtering and counting accuracy
 - Topic browsing order by relevance and recency
+- **Transcript Processing Properties**:
+  - Minimum segment size enforcement (1000+ characters)
+  - Timestamp preservation during consolidation
+  - Level mapping correctness from session codes
+  - Metadata enrichment completeness
+  - Sentence boundary splitting accuracy
 
 ### Running Tests
 
@@ -265,6 +271,8 @@ npm run create-production-db:simple
   - **Filesystem Integration**: Downloads and processes subtitle files through temporary directory operations
   - **Automatic Cleanup**: Properly manages and cleans up temporary subtitle files after processing
   - **Enhanced VTT Parsing**: Improved parsing with detailed logging and error handling
+  - **Segment Consolidation**: Combines VTT segments into meaningful 1000+ character chunks for better embedding efficiency
+  - **Sentence Boundary Splitting**: Intelligently splits long segments at sentence boundaries to stay within embedding model limits
   - **Robust Error Handling**: Gracefully handles videos without available transcripts
   - **Quality Assurance**: Skips videos that fail processing to maintain database integrity
 - **AWS Bedrock Nova 2 Integration**: Uses latest Nova 2 Multimodal Embeddings model with optimized API schema
@@ -273,6 +281,13 @@ npm run create-production-db:simple
   - Configured for GENERIC_INDEX embedding purpose for optimal vector database performance
   - Enhanced text truncation and token management
   - Type-safe metadata handling with proper const assertions
+- **AI-Powered Metadata Extraction**: Uses Amazon Nova 2 Lite for intelligent content analysis
+  - **Speaker Identification**: Extracts speaker names mentioned in transcript content
+  - **Service Detection**: Identifies AWS services discussed in sessions
+  - **Topic Classification**: Categorizes content by technical themes and industry verticals
+  - **Session Type Recognition**: Determines session format (Workshop, Keynote, Breakout, etc.)
+  - **Level Extraction**: Derives technical difficulty from video titles using session codes (1xx→Introductory, 2xx→Intermediate, 3xx→Advanced, 4xx→Expert)
+  - **Fallback Processing**: Gracefully falls back to regex-based extraction if AI processing fails
 - **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos from channels/playlists without filtering
 - **Flexible Processing Options**: Skip transcripts for faster processing or include full transcript analysis
 - **Batch Processing**: Processes videos in configurable batches for memory efficiency (default: 5 videos per batch)
@@ -383,6 +398,12 @@ Current implementation status based on the specification:
 - [x] Browse interface for content discovery
 - [x] Comprehensive property-based testing
 - [x] Improved test reliability and performance
+- [x] **Transcript Processing Enhancement**: Segment consolidation and AI metadata extraction
+  - [x] VTT segment consolidation into 1000+ character chunks
+  - [x] Amazon Nova 2 Lite integration for intelligent metadata extraction
+  - [x] Title-based level extraction using session codes
+  - [x] Sentence boundary splitting for long segments
+  - [x] Property-based testing for segment processing and level mapping
 
 ### 🚧 In Progress
 - [ ] YouTube URL generation property tests (Property 3)
