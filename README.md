@@ -73,6 +73,15 @@ cd packages/data-pipeline
 # Create sample database for development
 npm run create-sample-db
 
+# Create production database
+npm run create-production-db
+
+# Create production database with backup and compression
+npm run create-production-db:full
+
+# Verify database integrity
+npm run verify-production-db [database-path]
+
 # Start development mode
 npm run dev
 
@@ -173,7 +182,9 @@ npm test SearchEngine.test.ts -w packages/client-app
 
 ## 📁 Database Setup
 
-For development, you can create a sample database:
+### Development Database
+
+For development, you can create a sample database with test data:
 
 ```bash
 cd packages/data-pipeline
@@ -182,18 +193,101 @@ npm run create-sample-db
 
 This creates a sample database at `packages/client-app/public/database/reinvent-videos.db` with test data.
 
+### Production Database
+
+For production deployment, use the production database scripts:
+
+```bash
+cd packages/data-pipeline
+
+# Create production database with real video data
+npm run create-production-db
+
+# Create production database with backup and compression
+npm run create-production-db:full
+
+# Verify production database integrity
+npm run verify-production-db [path-to-database]
+```
+
+**Production Database Features:**
+- **Real Data Processing**: Integrates with yt-dlp for actual video discovery
+- **AWS Bedrock Integration**: Uses Nova 2 for vector embeddings and metadata enrichment
+- **Automatic Backup**: Creates backups before overwriting existing databases
+- **Compression**: Optimizes database size for CDN distribution
+- **Integrity Verification**: Validates database structure and content
+- **Performance Optimization**: Includes indexing and query optimization
+
 ## 🚀 Deployment
 
+### Prerequisites
+
+1. **AWS Credentials**: Configure AWS credentials for Bedrock access
+   ```bash
+   aws configure
+   # or set environment variables:
+   # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
+   ```
+
+2. **yt-dlp Installation**: Ensure yt-dlp is installed and accessible
+   ```bash
+   pip install yt-dlp
+   # or
+   brew install yt-dlp
+   ```
+
 ### Data Pipeline Deployment
-1. Set up AWS credentials for Bedrock access
-2. Configure yt-dlp for video discovery
-3. Run the pipeline to generate the database
-4. Deploy database to CDN (S3 + CloudFront)
+
+1. **Generate Production Database**:
+   ```bash
+   cd packages/data-pipeline
+   
+   # Set AWS region for Bedrock
+   export AWS_REGION=us-east-1
+   
+   # Create production database with full pipeline
+   npm run create-production-db:full
+   ```
+
+2. **Deploy Database to CDN**:
+   ```bash
+   # Deploy to S3 + CloudFront
+   npm run deploy-production-db
+   ```
+
+3. **Verify Deployment**:
+   ```bash
+   # Verify database integrity
+   npm run verify-production-db
+   ```
 
 ### Client Application Deployment
-1. Build the client application: `npm run build`
-2. Deploy static files to hosting service (Vercel, Netlify, etc.)
-3. Ensure database URL points to CDN location
+
+1. **Build the Application**:
+   ```bash
+   cd packages/client-app
+   npm run build
+   ```
+
+2. **Deploy Static Files**:
+   - **Vercel**: `vercel --prod`
+   - **Netlify**: `netlify deploy --prod --dir=dist`
+   - **AWS S3**: Upload `dist/` contents to S3 bucket
+
+3. **Configure Database URL**:
+   - Update database URL in client configuration to point to CDN location
+   - Ensure CORS is configured for cross-origin database access
+
+### Environment Variables
+
+**Data Pipeline**:
+- `AWS_REGION`: AWS region for Bedrock services (default: us-east-1)
+- `AWS_ACCESS_KEY_ID`: AWS access key
+- `AWS_SECRET_ACCESS_KEY`: AWS secret key
+- `MAX_VIDEOS`: Maximum number of videos to process (optional)
+
+**Client Application**:
+- `VITE_DATABASE_URL`: URL to the production database (CDN endpoint)
 
 ## 📊 Project Status
 
@@ -206,6 +300,8 @@ Current implementation status based on the specification:
 - [x] Vector embedding generation with AWS Bedrock
 - [x] SQLite database with FTS5 search
 - [x] Database update and deployment services
+- [x] Production database management with backup and compression
+- [x] Database integrity verification and optimization
 - [x] React client application foundation
 - [x] Database loader with caching and progress tracking
 - [x] Hybrid search engine (semantic + keyword)
@@ -213,6 +309,7 @@ Current implementation status based on the specification:
 - [x] Search interface with auto-complete
 - [x] Browse interface for content discovery
 - [x] Comprehensive property-based testing
+- [x] Improved test reliability and performance
 
 ### 🚧 In Progress
 - [ ] YouTube URL generation property tests (Property 3)
