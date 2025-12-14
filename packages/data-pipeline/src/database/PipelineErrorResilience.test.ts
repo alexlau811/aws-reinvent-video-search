@@ -72,7 +72,7 @@ describe('Pipeline Error Resilience Property Tests', () => {
     startTime: fc.float({ min: 0, max: 3600 }),
     endTime: fc.float({ min: 0, max: 3600 }),
     text: fc.string({ minLength: 1, maxLength: 1000 }),
-    embedding: fc.array(fc.float({ min: -1, max: 1 }), { minLength: 5, maxLength: 100 }),
+    embedding: fc.array(fc.float({ min: -1, max: 1 }), { minLength: 1024, maxLength: 1024 }),
     confidence: fc.option(fc.float({ min: 0, max: 1 })),
     speaker: fc.option(fc.string({ minLength: 1, maxLength: 100 }))
   }).filter(segment => segment.startTime <= segment.endTime)
@@ -99,7 +99,7 @@ describe('Pipeline Error Resilience Property Tests', () => {
             startTime: index * 30,
             endTime: (index + 1) * 30,
             text: `Test segment ${index} for video ${video.title}`,
-            embedding: Array.from({ length: 10 }, (_, i) => Math.random() - 0.5),
+            embedding: Array.from({ length: 1024 }, (_, i) => Math.random() - 0.5),
             confidence: 0.9,
             speaker: `Speaker ${index}`
           }))
@@ -150,7 +150,7 @@ describe('Pipeline Error Resilience Property Tests', () => {
               startTime: segIndex * 30,
               endTime: (segIndex + 1) * 30,
               text: `Segment ${segIndex} for ${video.title}`,
-              embedding: Array.from({ length: 10 }, () => Math.random() - 0.5),
+              embedding: Array.from({ length: 1024 }, () => Math.random() - 0.5),
               confidence: 0.8 + Math.random() * 0.2,
               speaker: `Speaker ${segIndex}`
             }))

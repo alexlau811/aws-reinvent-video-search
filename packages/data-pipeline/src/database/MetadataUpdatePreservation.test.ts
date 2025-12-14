@@ -68,7 +68,7 @@ describe('Metadata Update Preservation Property Tests', () => {
     startTime: fc.float({ min: 0, max: 3600 }),
     endTime: fc.float({ min: 0, max: 3600 }),
     text: fc.string({ minLength: 1, maxLength: 1000 }),
-    embedding: fc.array(fc.float({ min: -1, max: 1 }), { minLength: 5, maxLength: 100 }),
+    embedding: fc.array(fc.float({ min: -1, max: 1 }), { minLength: 1024, maxLength: 1024 }),
     confidence: fc.option(fc.float({ min: 0, max: 1 })),
     speaker: fc.option(fc.string({ minLength: 1, maxLength: 100 }))
   }).filter(segment => segment.startTime <= segment.endTime)
