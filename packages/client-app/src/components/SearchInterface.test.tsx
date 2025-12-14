@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import * as fc from 'fast-check'
 import { SearchInterface } from './SearchInterface'
 import type { Database } from '@aws-reinvent-search/shared'
 
