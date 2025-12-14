@@ -35,6 +35,7 @@ export interface MetadataEnrichmentService {
 // Embedding service interface
 export interface EmbeddingService {
   generateEmbeddings(text: string): Promise<number[]>
+  generateQueryEmbeddings(text: string): Promise<number[]>
   batchGenerateEmbeddings(texts: string[]): Promise<number[][]>
 }
 

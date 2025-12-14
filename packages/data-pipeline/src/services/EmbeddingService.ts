@@ -60,6 +60,43 @@ export class EmbeddingServiceImpl implements EmbeddingService {
   }
 
   /**
+   * Generate embeddings for query text (optimized for retrieval)
+   */
+  async generateQueryEmbeddings(text: string): Promise<number[]> {
+    if (!text || text.trim().length === 0) {
+      throw new VideoProcessingError(
+        'Cannot generate embeddings for empty query text',
+        'unknown',
+        'embedding'
+      )
+    }
+
+    const truncatedText = this.truncateText(text, 8000)
+
+    let lastError: Error | undefined
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await this.invokeQueryEmbeddingModel(truncatedText)
+        return response
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error')
+        
+        if (attempt < this.maxRetries) {
+          const delayMs = this.retryDelay * Math.pow(2, attempt - 1) + Math.random() * 1000
+          await this.delay(delayMs)
+        }
+      }
+    }
+
+    throw new VideoProcessingError(
+      `Failed to generate query embeddings after ${this.maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
+      'unknown',
+      'embedding',
+      lastError
+    )
+  }
+
+  /**
    * Generate embeddings for multiple texts in batch
    * Processes texts sequentially to avoid rate limits
    */
@@ -100,7 +137,52 @@ export class EmbeddingServiceImpl implements EmbeddingService {
   }
 
   /**
-   * Invoke the Nova 2 Multimodal Embeddings model via Bedrock
+   * Invoke the Nova 2 Multimodal Embeddings model for query text (retrieval optimized)
+   */
+  private async invokeQueryEmbeddingModel(text: string): Promise<number[]> {
+    const payload = {
+      schemaVersion: "nova-multimodal-embed-v1",
+      taskType: "SINGLE_EMBEDDING",
+      singleEmbeddingParams: {
+        embeddingPurpose: "TEXT_RETRIEVAL", // For querying text content
+        embeddingDimension: 1024,
+        text: {
+          truncationMode: "END",
+          value: text
+        }
+      }
+    }
+
+    const command = new InvokeModelCommand({
+      modelId: this.modelId,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify(payload)
+    })
+
+    const response = await this.client.send(command)
+    
+    if (!response.body) {
+      throw new Error('Empty response from Bedrock')
+    }
+
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body))
+    
+    // Nova 2 Multimodal Embeddings returns embeddings in a different format
+    if (!responseBody.embeddings || !Array.isArray(responseBody.embeddings) || responseBody.embeddings.length === 0) {
+      throw new Error('Invalid embedding response format')
+    }
+
+    const firstEmbedding = responseBody.embeddings[0]
+    if (!firstEmbedding.embedding || !Array.isArray(firstEmbedding.embedding)) {
+      throw new Error('Invalid embedding data format')
+    }
+
+    return firstEmbedding.embedding
+  }
+
+  /**
+   * Invoke the Nova 2 Multimodal Embeddings model for indexing content
    */
   private async invokeEmbeddingModel(text: string): Promise<number[]> {
     const payload = {
@@ -131,11 +213,17 @@ export class EmbeddingServiceImpl implements EmbeddingService {
 
     const responseBody = JSON.parse(new TextDecoder().decode(response.body))
     
-    if (!responseBody.embedding || !Array.isArray(responseBody.embedding)) {
+    // Nova 2 Multimodal Embeddings returns embeddings in a different format
+    if (!responseBody.embeddings || !Array.isArray(responseBody.embeddings) || responseBody.embeddings.length === 0) {
       throw new Error('Invalid embedding response format')
     }
 
-    return responseBody.embedding
+    const firstEmbedding = responseBody.embeddings[0]
+    if (!firstEmbedding.embedding || !Array.isArray(firstEmbedding.embedding)) {
+      throw new Error('Invalid embedding data format')
+    }
+
+    return firstEmbedding.embedding
   }
 
   /**
