@@ -129,7 +129,7 @@ Do not run all tests as the output length will be super long.
 ### Data Pipeline
 - **Node.js + TypeScript** - Runtime and type safety
 - **yt-dlp** - YouTube video discovery and metadata extraction
-- **AWS Bedrock (Nova 2)** - Vector embeddings and AI-powered metadata enrichment
+- **AWS Bedrock (Nova 2 Multimodal Embeddings)** - Vector embeddings and AI-powered metadata enrichment
 - **Better SQLite3** - High-performance database operations
 - **Fast-check** - Property-based testing for data integrity
 
@@ -230,7 +230,7 @@ npm run build-all-videos "https://www.youtube.com/@channelname" ./videos.db --sk
 npm run build-all-videos "https://www.youtube.com/playlist?list=PLxxxxxx" ./playlist.db --batch-size 10
 
 # Full example with all options
-npm run build-all-videos "https://www.youtube.com/@awsevents" ../client-app/public/database/aws-all-videos.db --max-videos 500 --batch-size 3
+npm run build-all-videos "https://www.youtube.com/@AWSEventsChannel" ../client-app/public/database/aws-all-videos.db --max-videos 500 --batch-size 3
 ```
 
 #### Option 2: Production Database Scripts
@@ -259,7 +259,7 @@ npm run create-production-db:simple
 
 **Production Database Features:**
 - **Real Data Processing**: Integrates with yt-dlp for actual video discovery and transcript extraction
-- **AWS Bedrock Integration**: Uses Nova 2 for vector embeddings and AI-powered metadata enrichment
+- **AWS Bedrock Integration**: Uses Nova 2 Multimodal Embeddings for vector embeddings and AI-powered metadata enrichment
 - **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos from channels/playlists without filtering
 - **Flexible Processing Options**: Skip transcripts for faster processing or include full transcript analysis
 - **Batch Processing**: Processes videos in configurable batches for memory efficiency (default: 5 videos per batch)
@@ -274,7 +274,7 @@ npm run create-production-db:simple
 
 ### Prerequisites
 
-1. **AWS Credentials**: Configure AWS credentials for Bedrock access
+1. **AWS Credentials**: Configure AWS credentials for Bedrock Nova 2 Multimodal Embeddings access
    ```bash
    aws configure
    # or set environment variables:
@@ -294,7 +294,7 @@ npm run create-production-db:simple
    ```bash
    cd packages/data-pipeline
    
-   # Set AWS region for Bedrock
+   # Set AWS region for Bedrock Nova 2 Multimodal Embeddings
    export AWS_REGION=us-east-1
    
    # Option A: Build from real YouTube data (recommended)
@@ -336,7 +336,7 @@ npm run create-production-db:simple
 ### Environment Variables
 
 **Data Pipeline**:
-- `AWS_REGION`: AWS region for Bedrock services (default: us-east-1)
+- `AWS_REGION`: AWS region for Bedrock Nova 2 Multimodal Embeddings (default: us-east-1)
 - `AWS_ACCESS_KEY_ID`: AWS access key
 - `AWS_SECRET_ACCESS_KEY`: AWS secret key
 - `MAX_VIDEOS`: Maximum number of videos to process (optional)
@@ -352,7 +352,7 @@ Current implementation status based on the specification:
 - [x] Project structure and TypeScript configuration
 - [x] Video discovery service using yt-dlp
 - [x] Metadata extraction and enrichment
-- [x] Vector embedding generation with AWS Bedrock
+- [x] Vector embedding generation with AWS Bedrock Nova 2 Multimodal Embeddings
 - [x] SQLite database with FTS5 search
 - [x] Database update and deployment services
 - [x] Production database management with backup and compression
