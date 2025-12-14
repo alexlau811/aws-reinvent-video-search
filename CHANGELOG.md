@@ -10,12 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **BREAKING**: Upgraded to AWS Bedrock Nova 2 Multimodal Embeddings model (`amazon.nova-2-multimodal-embeddings-v1:0`)
   - Improved embedding quality and multimodal capabilities
-  - Maintains 1024-dimensional embedding output for consistency
+  - Updated all embedding dimensions from 384 to 1024 for consistency
   - Enhanced retry logic with exponential backoff for better reliability
   - Better error handling and rate limiting
 
+### Added
+- New `build-all-reinvent.ts` script for processing ALL re:Invent 2025 videos without limits
+  - Supports batch processing with configurable batch sizes
+  - Comprehensive error handling and progress tracking
+  - Both transcript extraction and metadata-only processing modes
+  - Compatible with Nova 2 Multimodal Embeddings
+
 ### Fixed
 - Fixed unused `retryDelay` variable in EmbeddingService by properly implementing retry logic
+- Updated all test files to use 1024-dimensional embeddings for Nova 2 compatibility
+- Updated database validation to expect 1024-dimensional embeddings
+- Updated sample database generation to create Nova 2 compatible embeddings
 
 ## [1.0.0] - 2024-12-14
 
