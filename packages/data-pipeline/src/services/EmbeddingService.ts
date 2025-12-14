@@ -1,5 +1,5 @@
 /**
- * Embedding generation service using AWS Bedrock Nova 2
+ * Embedding generation service using AWS Bedrock Nova 2 Multimodal Embeddings
  * Generates vector embeddings for semantic search capabilities
  */
 
@@ -9,7 +9,7 @@ import { VideoProcessingError } from '@aws-reinvent-search/shared'
 
 export class EmbeddingServiceImpl implements EmbeddingService {
   private client: BedrockRuntimeClient
-  private readonly modelId = 'amazon.nova-embed-text-v1'
+  private readonly modelId = 'amazon.nova-2-multimodal-embeddings-v1:0'
   private readonly maxRetries = 3
   private readonly retryDelay = 1000 // 1 second base delay
 
@@ -35,17 +35,28 @@ export class EmbeddingServiceImpl implements EmbeddingService {
     // Truncate text if too long (Nova Embed has token limits)
     const truncatedText = this.truncateText(text, 8000)
 
-    try {
-      const response = await this.invokeEmbeddingModel(truncatedText)
-      return response
-    } catch (error) {
-      throw new VideoProcessingError(
-        `Failed to generate embeddings: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'unknown',
-        'embedding',
-        error instanceof Error ? error : undefined
-      )
+    let lastError: Error | undefined
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await this.invokeEmbeddingModel(truncatedText)
+        return response
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error')
+        
+        if (attempt < this.maxRetries) {
+          // Exponential backoff with jitter
+          const delayMs = this.retryDelay * Math.pow(2, attempt - 1) + Math.random() * 1000
+          await this.delay(delayMs)
+        }
+      }
     }
+
+    throw new VideoProcessingError(
+      `Failed to generate embeddings after ${this.maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
+      'unknown',
+      'embedding',
+      lastError
+    )
   }
 
   /**
