@@ -78,7 +78,7 @@ export AWS_SECRET_ACCESS_KEY=your_secret
 export AWS_REGION=us-east-1
 ```
 
-**Note**: Ensure your AWS credentials have access to the `amazon.nova-2-multimodal-embeddings-v1:0` model in AWS Bedrock. The service uses the latest Nova 2 Multimodal Embeddings API with optimized schema for vector database indexing.
+**Note**: Ensure your AWS credentials have access to both the `amazon.nova-2-lite-v1:0` model (for metadata extraction) and `amazon.nova-2-multimodal-embeddings-v1:0` model (for vector embeddings) in AWS Bedrock. The service uses the latest Nova 2 API with optimized schema for intelligent content analysis and vector database indexing.
 
 ### 3. Create Production Database
 
@@ -145,7 +145,10 @@ tsx src/create-production-db.ts \
 ```
 
 **Real Data Processing Features:**
-- **Real Transcript Extraction**: Uses yt-dlp to extract actual YouTube subtitles and captions with filesystem operations
+- **Enhanced Transcript Processing**: Advanced pipeline with segment consolidation and AI analysis
+  - **Segment Consolidation**: VTT segments are consolidated into meaningful 1000+ character chunks for better embedding efficiency
+  - **Sentence Boundary Splitting**: Long segments are intelligently split at sentence boundaries to stay within embedding model limits
+  - **Improved Language Detection**: Enhanced subtitle processing with better language detection (removed restrictive --sub-langs filtering)
   - Automatic subtitle availability detection before processing
   - Support for both manual and auto-generated subtitles
   - Filesystem-based VTT file processing through temporary directories
@@ -154,7 +157,13 @@ tsx src/create-production-db.ts \
   - Robust error handling for videos without transcripts
   - VTT and SRT format parsing capabilities
   - **Quality Assurance**: Videos without transcripts are skipped to maintain database integrity
-- **AI Metadata Enrichment**: Leverages AWS Bedrock Nova 2 Multimodal Embeddings with optimized API schema for intelligent content analysis
+- **AI Metadata Enrichment**: Leverages AWS Bedrock Nova 2 Lite for intelligent content analysis and Nova 2 Multimodal Embeddings for vector search
+  - **Speaker Identification**: Extracts speaker names mentioned in transcript content using Nova 2 Lite
+  - **Service Detection**: Identifies AWS services discussed in sessions
+  - **Topic Classification**: Categorizes content by technical themes and industry verticals
+  - **Session Type Recognition**: Determines session format (Workshop, Keynote, Breakout, etc.)
+  - **Level Extraction**: Derives technical difficulty from video titles using session codes (1xx→Introductory, 2xx→Intermediate, 3xx→Advanced, 4xx→Expert)
+  - **Fallback Processing**: Gracefully falls back to regex-based extraction if AI processing fails
   - Type-safe metadata handling with proper const assertions
   - Enhanced error handling with proper type checking
 - **Comprehensive Channel Processing**: New `build-all-videos` script processes ALL videos without content filtering
