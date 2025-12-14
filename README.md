@@ -94,3 +94,5 @@ npm run type-check
 ## License
 
 MIT License - see LICENSE file for details
+
+<!-- Test hook trigger -->
