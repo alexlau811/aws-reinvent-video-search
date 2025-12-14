@@ -11,7 +11,10 @@
     "test": "vitest run",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
-    "create-sample-db": "tsx src/create-sample-db.ts"
+    "create-sample-db": "tsx src/create-sample-db.ts",
+    "create-production-db": "tsx src/create-production-db.ts",
+    "create-production-db:full": "tsx src/create-production-db.ts --backup --compression",
+    "verify-production-db": "tsx -e \"import { ProductionDatabaseService } from './src/database/ProductionDatabaseService.js'; const db = new ProductionDatabaseService(process.argv[2] || '../client-app/public/database/reinvent-videos-prod.db'); db.verifyDatabase().then(console.log).finally(() => db.close())\""
   },
   "dependencies": {
     "@aws-reinvent-search/shared": "file:../shared",
