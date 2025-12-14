@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated API payload structure to use nova-multimodal-embed-v1 schema
   - Configured proper taskType and singleEmbeddingParams for optimal performance
   - Set embeddingPurpose to GENERIC_INDEX for vector database indexing
+  - Added query-optimized embeddings with TEXT_RETRIEVAL purpose for better search performance
+  - Fixed response format parsing to handle Nova 2's embeddings array structure
   - Improved embedding quality and multimodal capabilities
   - Updated all embedding dimensions from 384 to 1024 for consistency
   - Enhanced retry logic with exponential backoff for better reliability
