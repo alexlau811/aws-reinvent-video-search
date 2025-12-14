@@ -14,6 +14,7 @@
     "create-sample-db": "tsx src/create-sample-db.ts",
     "create-production-db": "tsx src/create-production-db.ts",
     "create-production-db:simple": "tsx src/create-production-simple.ts",
+    "build-real-db": "tsx src/build-real-db-simple.ts",
     "create-production-db:full": "tsx src/create-production-db.ts --backup --compression",
     "deploy-production-db": "tsx src/deploy-production-db.ts",
     "verify-production-db": "tsx -e \"import { ProductionDatabaseService } from './src/database/ProductionDatabaseService.js'; const db = new ProductionDatabaseService(process.argv[2] || '../client-app/public/database/reinvent-videos-prod.db'); db.verifyDatabase().then(console.log).finally(() => db.close())\""
