@@ -154,7 +154,7 @@ The pipeline extracts metadata using keyword/regex patterns:
 
 The client app is automatically deployed to GitHub Pages on every push to the main branch:
 
-🚀 **Live Demo**: https://alexlau811.github.io/aws-reinvent-video-search/
+🚀 **Live Demo**: http://reinvent2025videos.itdog.com.hk/
 
 The deployment workflow:
 1. Builds the client app with production settings
@@ -174,6 +174,47 @@ Deploy the `dist/` folder to any static hosting:
 - **Vercel**: `vercel --prod`
 - **Netlify**: `netlify deploy --prod --dir=dist`
 - **AWS S3**: Upload to S3 bucket with static hosting
+
+## Contributing
+
+We welcome contributions to the AWS re:Invent Video Search Platform! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+
+### Ways to Contribute
+
+- **Report Issues**: Found a bug or have a feature request? [Open an issue](../../issues)
+- **Submit Pull Requests**: Fix bugs, add features, or improve documentation
+- **Improve Documentation**: Help make the docs clearer and more comprehensive
+- **Share Feedback**: Let us know how you're using the platform and what could be better
+
+### Getting Started
+
+1. **Fork the repository** and clone your fork
+2. **Install dependencies**: `npm install`
+3. **Create a feature branch**: `git checkout -b feature/your-feature-name`
+4. **Make your changes** and test them thoroughly
+5. **Commit your changes**: `git commit -m "Add your feature"`
+6. **Push to your fork**: `git push origin feature/your-feature-name`
+7. **Open a Pull Request** with a clear description of your changes
+
+### Development Guidelines
+
+- Follow the existing code style and conventions
+- Add tests for new functionality when applicable
+- Update documentation for any API or feature changes
+- Ensure all existing tests pass before submitting
+- Keep commits focused and write clear commit messages
+
+### Areas for Contribution
+
+- **Data Pipeline Improvements**: Better metadata extraction, new data sources
+- **Search Enhancements**: Advanced filtering, search result ranking
+- **UI/UX Improvements**: Better mobile experience, accessibility features
+- **Performance Optimizations**: Faster search, smaller bundle sizes
+- **Documentation**: Setup guides, API documentation, examples
+
+### Questions?
+
+Feel free to open an issue for questions about contributing or reach out through the project's issue tracker.
 
 ## License
 
