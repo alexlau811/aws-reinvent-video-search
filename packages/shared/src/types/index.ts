@@ -1,6 +1,6 @@
 /**
  * Shared type definitions for the AWS re:Invent Video Search Platform
- * Used by both data pipeline and client application
+ * Simplified version: keyword/regex extraction only, no embeddings/segments
  */
 
 // Core video metadata interface
@@ -14,7 +14,7 @@ export interface VideoMetadata {
   duration: number
   thumbnailUrl: string
   youtubeUrl: string
-  
+
   // Enriched metadata
   level: 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unknown'
   services: string[]
@@ -22,26 +22,14 @@ export interface VideoMetadata {
   industry: string[]
   sessionType: 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown'
   speakers: string[]
-  
+
   // Metadata source tracking
   metadataSource: 'transcript' | 'video-metadata' | 'combined'
   metadataConfidence: number
   extractedKeywords: string[]
 }
 
-// Video segment with transcript and embedding data
-export interface VideoSegment {
-  id: string
-  videoId: string
-  startTime: number
-  endTime: number
-  text: string
-  embedding: number[]
-  confidence?: number
-  speaker?: string
-}
-
-// Transcript data structures
+// Transcript data structures (for extraction, not stored)
 export interface Transcript {
   videoId: string
   language: string
@@ -96,7 +84,6 @@ export interface SearchOptions {
 
 export interface SearchResult {
   video: VideoMetadata
-  segments: VideoSegment[]
   relevanceScore: number
 }
 
@@ -104,17 +91,7 @@ export interface SearchResult {
 export interface Database {
   exec(options: { sql: string; bind?: any[]; returnValue?: 'resultRows' | 'saveSql' }): any[]
   close(): void
-  // Optional methods for compatibility
   deserialize?(data: Uint8Array): void
-  prepare?(sql: string): Statement
-}
-
-// Legacy interface for backward compatibility (deprecated)
-export interface Statement {
-  run(...params: any[]): { changes: number; lastInsertRowid: number }
-  get(...params: any[]): any
-  all(...params: any[]): any[]
-  finalize(): void
 }
 
 // Error types

@@ -13,9 +13,7 @@ interface FilterState {
   level?: string[]
   services?: string[]
   topics?: string[]
-  industry?: string[]
   sessionType?: string[]
-  metadataSource?: string[]
 }
 
 export const SearchInterface: React.FC<SearchInterfaceProps> = ({ database }) => {
@@ -34,10 +32,8 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({ database }) =>
     levels: [] as string[],
     services: [] as string[],
     topics: [] as string[],
-    industries: [] as string[],
     sessionTypes: [] as string[],
-    channels: [] as string[],
-    metadataSources: [] as string[]
+    channels: [] as string[]
   })
   
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -66,7 +62,6 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({ database }) =>
       if (filters.level?.length) params.set('level', filters.level.join(','))
       if (filters.services?.length) params.set('services', filters.services.join(','))
       if (filters.topics?.length) params.set('topics', filters.topics.join(','))
-      if (filters.industry?.length) params.set('industry', filters.industry.join(','))
       if (filters.sessionType?.length) params.set('sessionType', filters.sessionType.join(','))
       if (filters.duration?.min !== undefined) params.set('minDuration', filters.duration.min.toString())
       if (filters.duration?.max !== undefined) params.set('maxDuration', filters.duration.max.toString())
@@ -97,10 +92,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({ database }) =>
       
       const topicsParam = params.get('topics')
       if (topicsParam) urlFilters.topics = topicsParam.split(',')
-      
-      const industryParam = params.get('industry')
-      if (industryParam) urlFilters.industry = industryParam.split(',')
-      
+
       const sessionTypeParam = params.get('sessionType')
       if (sessionTypeParam) urlFilters.sessionType = sessionTypeParam.split(',')
       
@@ -142,8 +134,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({ database }) =>
         // Get available filter values for suggestions
         const allTerms = [
           ...availableFilters.services,
-          ...availableFilters.topics,
-          ...availableFilters.industries
+          ...availableFilters.topics
         ]
 
         // Filter terms that match the current query
@@ -175,16 +166,14 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({ database }) =>
         level: filters.level as any,
         services: filters.services,
         topics: filters.topics,
-        industry: filters.industry,
         sessionType: filters.sessionType as any,
         channels: filters.channels,
         duration: filters.duration,
         dateRange: filters.dateRange,
-        metadataSource: filters.metadataSource as any,
         limit: 50
       }
 
-      const searchResults = await searchEngine.hybridSearch(queryToSearch, searchOptions)
+      const searchResults = await searchEngine.search(queryToSearch, searchOptions)
       setResults(searchResults)
     } catch (err) {
       console.error('Search failed:', err)
@@ -296,25 +285,6 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({ database }) =>
     setQuery(suggestion)
     setShowSuggestions(false)
     handleSearch(suggestion)
-  }
-
-  // Generate YouTube URL with timestamp
-  const generateYouTubeUrl = (videoUrl: string, startTime: number): string => {
-    try {
-      const url = new URL(videoUrl)
-      url.searchParams.set('t', Math.floor(startTime).toString())
-      return url.toString()
-    } catch (err) {
-      console.warn('Failed to generate YouTube URL with timestamp:', err)
-      return videoUrl
-    }
-  }
-
-  // Format time for display
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = Math.floor(seconds % 60)
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
   // Format duration for display
@@ -784,71 +754,8 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({ database }) =>
                         <div className="text-sm font-medium text-gray-900">
                           {(result.relevanceScore * 100).toFixed(1)}% match
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {result.segments.length} segment{result.segments.length !== 1 ? 's' : ''}
-                        </div>
                       </div>
                     </div>
-                    
-                    {/* Video Segments */}
-                    {result.segments.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-3">
-                          Relevant Segments:
-                        </h4>
-                        <div className="space-y-3">
-                          {result.segments.slice(0, 5).map((segment) => (
-                            <div
-                              key={segment.id}
-                              className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors"
-                            >
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex items-center space-x-2">
-                                  <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 font-mono">
-                                    {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
-                                  </span>
-                                  {segment.speaker && (
-                                    <span className="text-xs text-gray-500">
-                                      {segment.speaker}
-                                    </span>
-                                  )}
-                                </div>
-                                <a
-                                  href={generateYouTubeUrl(result.video.youtubeUrl, segment.startTime)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-600 hover:text-blue-500 hover:bg-blue-50 transition-colors"
-                                >
-                                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                                  </svg>
-                                  Watch
-                                </a>
-                              </div>
-                              <p className="text-sm text-gray-700 leading-relaxed">
-                                {segment.text.length > 200 
-                                  ? `${segment.text.substring(0, 200)}...` 
-                                  : segment.text
-                                }
-                              </p>
-                              {segment.confidence && (
-                                <div className="mt-2 text-xs text-gray-500">
-                                  Confidence: {(segment.confidence * 100).toFixed(1)}%
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                          
-                          {result.segments.length > 5 && (
-                            <div className="text-center">
-                              <button className="text-sm text-blue-600 hover:text-blue-500 font-medium">
-                                Show {result.segments.length - 5} more segments
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

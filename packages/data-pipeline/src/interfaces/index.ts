@@ -2,12 +2,11 @@
  * Data pipeline service interfaces
  */
 
-import type { 
-  VideoMetadata, 
-  Transcript, 
-  VideoSegment, 
-  ExtractedMetadata, 
-  EnrichedMetadata 
+import type {
+  VideoMetadata,
+  Transcript,
+  ExtractedMetadata,
+  EnrichedMetadata
 } from '@aws-reinvent-search/shared'
 
 // Video discovery service interface
@@ -19,12 +18,6 @@ export interface VideoDiscoveryService {
   getTranscriptText(videoId: string): Promise<string | null>
 }
 
-// Transcription service interface
-export interface TranscriptionService {
-  transcribeVideo(videoId: string, audioUrl: string): Promise<Transcript>
-  segmentTranscript(transcript: Transcript): VideoSegment[]
-}
-
 // Metadata enrichment service interface
 export interface MetadataEnrichmentService {
   extractFromTranscript(transcript: string): Promise<ExtractedMetadata>
@@ -32,17 +25,9 @@ export interface MetadataEnrichmentService {
   combineMetadata(transcriptMeta: ExtractedMetadata, videoMeta: ExtractedMetadata): EnrichedMetadata
 }
 
-// Embedding service interface
-export interface EmbeddingService {
-  generateEmbeddings(text: string): Promise<number[]>
-  generateQueryEmbeddings(text: string): Promise<number[]>
-  batchGenerateEmbeddings(texts: string[]): Promise<number[][]>
-}
-
 // Database service interface
 export interface DatabaseService {
   updateVideoMetadata(videos: VideoMetadata[]): Promise<void>
-  insertVideoSegments(segments: VideoSegment[]): Promise<void>
   optimizeDatabase(): Promise<void>
   exportToFile(path: string): Promise<void>
 }

@@ -1,12 +1,12 @@
 /**
  * Client-side service interfaces
+ * Simplified version: keyword search only, no segments/embeddings
  */
 
-import type { 
-  VideoSegment, 
-  SearchOptions, 
-  SearchResult, 
-  Database 
+import type {
+  SearchOptions,
+  SearchResult,
+  Database
 } from '@aws-reinvent-search/shared'
 
 // Database loader interface for client-side
@@ -18,10 +18,21 @@ export interface DatabaseLoader {
 
 // Search engine interface for client-side
 export interface SearchEngine {
-  hybridSearch(query: string, options: SearchOptions): Promise<SearchResult[]>
-  vectorSearch(embedding: number[], limit: number): Promise<VideoSegment[]>
-  keywordSearch(query: string, options: SearchOptions): Promise<VideoSegment[]>
-  combineResults(vectorResults: VideoSegment[], keywordResults: VideoSegment[]): SearchResult[]
+  search(query: string, options: SearchOptions): Promise<SearchResult[]>
+  getAvailableFilters(): {
+    levels: string[]
+    services: string[]
+    topics: string[]
+    sessionTypes: string[]
+    channels: string[]
+  }
+  getFilterStatistics(): {
+    totalVideos: number
+    levelCounts: Record<string, number>
+    serviceCounts: Record<string, number>
+    topicCounts: Record<string, number>
+    sessionTypeCounts: Record<string, number>
+  }
 }
 
 // User interface component interface
@@ -29,5 +40,4 @@ export interface UserInterface {
   renderSearchBar(): JSX.Element
   renderFilters(): JSX.Element
   renderResults(results: SearchResult[]): JSX.Element
-  renderVideoSegment(segment: VideoSegment): JSX.Element
 }

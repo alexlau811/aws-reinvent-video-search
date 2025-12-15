@@ -442,24 +442,22 @@ export class DatabaseLoader {
   private verifyDatabaseStructure(db: Database): void {
     try {
       console.log('Starting database structure verification...')
-      
+
       // Check for required tables
       console.log('Executing query to check tables...')
       const result = db.exec({
         sql: "SELECT name FROM sqlite_master WHERE type='table'",
         returnValue: 'resultRows'
       })
-      
+
       console.log('Query result:', result)
-      
+
       const tableNames = result.map((row: any[]) => row[0])
       console.log('Found tables:', tableNames)
-      
-      const requiredTables = ['videos', 'video_segments']
-      for (const table of requiredTables) {
-        if (!tableNames.includes(table)) {
-          throw new Error(`Missing required table: ${table}`)
-        }
+
+      // Only require videos table (simplified schema)
+      if (!tableNames.includes('videos')) {
+        throw new Error('Missing required table: videos')
       }
 
       // Check for FTS tables
@@ -469,7 +467,7 @@ export class DatabaseLoader {
       }
 
       console.log('Database structure verified:', { tables: tableNames.length, ftsTables: ftsTableNames.length })
-      
+
     } catch (error) {
       console.error('Database structure verification failed:', error)
       throw new Error(`Invalid database structure: ${error instanceof Error ? error.message : 'Unknown error'}`)

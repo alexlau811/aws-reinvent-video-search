@@ -32,7 +32,7 @@ function App() {
         }
         
         // Download and initialize database
-        const databaseUrl = '/database/reinvent-videos.db' // This will be served from CDN
+        const databaseUrl = '/database/reinvent-2025-complete.db' // This will be served from CDN
         const buffer = await databaseLoader.downloadDatabase(databaseUrl)
         setLoadingProgress(80)
         

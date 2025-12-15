@@ -1,138 +1,40 @@
 /**
- * MetadataEnrichmentService - Extracts metadata from YouTube video transcripts using AI
+ * MetadataEnrichmentService - Extracts metadata from video title, description, and transcript
+ * Uses keyword/regex-based extraction only (no AI/embeddings)
  */
 
-import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime'
-import type { 
-  ExtractedMetadata, 
-  EnrichedMetadata 
+import type {
+  ExtractedMetadata,
+  EnrichedMetadata
 } from '@aws-reinvent-search/shared'
 import type { MetadataEnrichmentService } from '../interfaces/index.js'
 
 export class MetadataEnrichmentServiceImpl implements MetadataEnrichmentService {
-  private bedrockClient: BedrockRuntimeClient
-  private readonly MODEL_ID = 'amazon.nova-2-lite-v1:0'
-
-  constructor() {
-    this.bedrockClient = new BedrockRuntimeClient({
-      region: process.env.AWS_REGION || 'us-east-1'
-    })
-  }
-
   /**
-   * Clean up resources (placeholder for interface compatibility)
-   */
-  async cleanup(): Promise<void> {
-    // No cleanup needed for this simplified implementation
-  }
-
-  /**
-   * Extract metadata from transcript using Amazon Nova 2 Lite AI analysis
+   * Extract metadata from transcript using regex-based analysis
    */
   async extractFromTranscript(transcript: string): Promise<ExtractedMetadata> {
-    try {
-      // Use Nova 2 Lite for AI-powered extraction
-      return await this.extractFromTranscriptWithNova(transcript)
-    } catch (error) {
-      console.warn('Nova 2 Lite extraction failed, falling back to regex-based extraction:', error)
-      // Fallback to regex-based extraction
-      return this.extractFromTranscriptFallback(transcript)
-    }
-  }
-
-  /**
-   * Extract metadata from transcript using Amazon Nova 2 Lite
-   */
-  private async extractFromTranscriptWithNova(transcript: string): Promise<ExtractedMetadata> {
-    const prompt = `Analyze this AWS re:Invent session transcript and extract structured metadata. Return ONLY a valid JSON object with the following structure:
-
-{
-  "inferredServices": ["service1", "service2"],
-  "inferredTopics": ["topic1", "topic2"],
-  "inferredLevel": "Introductory|Intermediate|Advanced|Expert|Unknown",
-  "sessionType": "Breakout|Chalk Talk|Workshop|Keynote|Lightning Talk|Unknown",
-  "speakers": ["Speaker Name 1", "Speaker Name 2"],
-  "keyTerms": ["term1", "term2"],
-  "confidence": 0.85
-}
-
-Guidelines:
-- inferredServices: List AWS services mentioned (e.g., "Lambda", "S3", "DynamoDB")
-- inferredTopics: High-level themes (e.g., "Architecture", "Security", "Machine Learning")
-- inferredLevel: Technical difficulty based on content complexity
-- sessionType: Format of the session based on content style
-- speakers: Names of people presenting (extract from "I'm [name]" or similar)
-- keyTerms: Important technical terms and concepts
-- confidence: Your confidence in the extraction (0.0-1.0)
-
-Transcript:
-${transcript.substring(0, 8000)}`
-
-    const command = new ConverseCommand({
-      modelId: this.MODEL_ID,
-      messages: [
-        {
-          role: 'user',
-          content: [{ text: prompt }]
-        }
-      ],
-      inferenceConfig: {
-        maxTokens: 1000,
-        temperature: 0.1
-      }
-    })
-
-    const response = await this.bedrockClient.send(command)
-    
-    if (!response.output?.message?.content?.[0]?.text) {
-      throw new Error('No response from Nova 2 Lite')
-    }
-
-    const responseText = response.output.message.content[0].text
-    
-    try {
-      const extractedData = JSON.parse(responseText)
-      
-      // Validate and normalize the response
-      return {
-        inferredServices: Array.isArray(extractedData.inferredServices) ? extractedData.inferredServices : [],
-        inferredTopics: Array.isArray(extractedData.inferredTopics) ? extractedData.inferredTopics : [],
-        inferredLevel: this.normalizeLevel(extractedData.inferredLevel || 'Unknown') as ExtractedMetadata['inferredLevel'],
-        sessionType: this.normalizeSessionType(extractedData.sessionType || 'Unknown') as ExtractedMetadata['sessionType'],
-        speakers: Array.isArray(extractedData.speakers) ? extractedData.speakers : [],
-        keyTerms: Array.isArray(extractedData.keyTerms) ? extractedData.keyTerms : [],
-        confidence: typeof extractedData.confidence === 'number' ? Math.min(Math.max(extractedData.confidence, 0), 1) : 0.8
-      }
-    } catch (parseError) {
-      throw new Error(`Failed to parse Nova 2 Lite response: ${parseError}`)
-    }
-  }
-
-  /**
-   * Fallback extraction using regex-based analysis (original implementation)
-   */
-  private extractFromTranscriptFallback(transcript: string): ExtractedMetadata {
     // Analyze transcript content for AWS services
     const inferredServices = this.extractAWSServices(transcript)
-    
+
     // Extract topics and themes
     const inferredTopics = this.extractTopics(transcript)
-    
+
     // Infer technical level based on content complexity
     const inferredLevel = this.inferTechnicalLevel(transcript)
-    
+
     // Infer session type from transcript content
     const sessionType = this.inferSessionTypeFromTranscript(transcript)
-    
+
     // Extract speakers from transcript (basic implementation)
     const speakers = this.extractSpeakers(transcript)
-    
+
     // Extract key technical terms
     const keyTerms = this.extractKeyTerms(transcript)
-    
+
     // Calculate confidence based on content analysis
     const confidence = this.calculateConfidence(transcript, inferredServices, inferredTopics)
-    
+
     return {
       inferredServices,
       inferredTopics,
@@ -151,31 +53,34 @@ ${transcript.substring(0, 8000)}`
     const title = videoMetadata.title || ''
     const description = videoMetadata.description || ''
     const tags = videoMetadata.tags || []
-    
+
     // Combine all text sources
     const combinedText = `${title} ${description} ${tags.join(' ')}`
-    
+
     // Extract AWS services from metadata
     const inferredServices = this.extractAWSServices(combinedText)
-    
+
     // Extract topics from metadata
     const inferredTopics = this.extractTopics(combinedText)
-    
-    // Infer level from title and description
-    const inferredLevel = this.inferTechnicalLevel(combinedText)
-    
+
+    // Try to get level from session code first, then fall back to content analysis
+    let inferredLevel = this.extractLevelFromTitle(title)
+    if (inferredLevel === 'Unknown') {
+      inferredLevel = this.inferTechnicalLevel(combinedText)
+    }
+
     // Infer session type from title and description
     const sessionType = this.inferSessionTypeFromMetadata(title, description)
-    
+
     // Extract speakers from title/description
     const speakers = this.extractSpeakersFromMetadata(title, description)
-    
+
     // Extract key terms
     const keyTerms = this.extractKeyTerms(combinedText)
-    
+
     // Calculate confidence (lower than transcript since less detailed)
     const confidence = Math.min(0.7, this.calculateConfidence(combinedText, inferredServices, inferredTopics))
-    
+
     return {
       inferredServices,
       inferredTopics,
@@ -193,25 +98,25 @@ ${transcript.substring(0, 8000)}`
   combineMetadata(transcriptMeta: ExtractedMetadata, videoMeta: ExtractedMetadata): EnrichedMetadata {
     // Combine services from both sources, prioritizing transcript
     const combinedServices = [...new Set([...transcriptMeta.inferredServices, ...videoMeta.inferredServices])]
-    
+
     // Combine topics from both sources
     const combinedTopics = [...new Set([...transcriptMeta.inferredTopics, ...videoMeta.inferredTopics])]
-    
+
     // Use transcript level if available, otherwise video metadata level
     const level = transcriptMeta.inferredLevel !== 'Unknown' ? transcriptMeta.inferredLevel : videoMeta.inferredLevel
-    
+
     // Use transcript session type if available, otherwise video metadata
     const sessionType = transcriptMeta.sessionType !== 'Unknown' ? transcriptMeta.sessionType : videoMeta.sessionType
-    
+
     // Combine speakers from both sources
     const combinedSpeakers = [...new Set([...transcriptMeta.speakers, ...videoMeta.speakers])]
-    
+
     // Combine key terms
     const combinedKeywords = [...new Set([...transcriptMeta.keyTerms, ...videoMeta.keyTerms])]
-    
+
     // Use higher confidence score
     const confidence = Math.max(transcriptMeta.confidence, videoMeta.confidence)
-    
+
     // Determine data source
     let dataSource: EnrichedMetadata['dataSource'] = 'combined'
     if (transcriptMeta.confidence === 0 && videoMeta.confidence > 0) {
@@ -219,7 +124,7 @@ ${transcript.substring(0, 8000)}`
     } else if (videoMeta.confidence === 0 && transcriptMeta.confidence > 0) {
       dataSource = 'transcript'
     }
-    
+
     return {
       level,
       services: combinedServices,
@@ -234,9 +139,9 @@ ${transcript.substring(0, 8000)}`
   }
 
   /**
-   * Extract AWS services mentioned in the transcript
+   * Extract AWS services mentioned in the text
    */
-  private extractAWSServices(transcript: string): string[] {
+  private extractAWSServices(text: string): string[] {
     const awsServices = [
       // Compute
       'EC2', 'Lambda', 'ECS', 'EKS', 'Fargate', 'Batch', 'Lightsail',
@@ -257,10 +162,10 @@ ${transcript.substring(0, 8000)}`
       // Management
       'CloudWatch', 'CloudTrail', 'Config', 'Systems Manager', 'CloudFormation', 'CDK'
     ]
-    
+
     const foundServices: string[] = []
-    const lowerTranscript = transcript.toLowerCase()
-    
+    const lowerText = text.toLowerCase()
+
     for (const service of awsServices) {
       // Look for service name with various patterns
       const patterns = [
@@ -268,22 +173,22 @@ ${transcript.substring(0, 8000)}`
         new RegExp(`\\bamazon\\s+${service.toLowerCase()}\\b`, 'gi'),
         new RegExp(`\\baws\\s+${service.toLowerCase()}\\b`, 'gi')
       ]
-      
+
       for (const pattern of patterns) {
-        if (pattern.test(lowerTranscript)) {
+        if (pattern.test(lowerText)) {
           foundServices.push(service)
           break
         }
       }
     }
-    
+
     return [...new Set(foundServices)]
   }
 
   /**
-   * Extract topics and themes from transcript
+   * Extract topics and themes from text
    */
-  private extractTopics(transcript: string): string[] {
+  private extractTopics(text: string): string[] {
     const topicKeywords = {
       'Architecture': ['architecture', 'design', 'pattern', 'microservices', 'serverless', 'distributed'],
       'Security': ['security', 'encryption', 'authentication', 'authorization', 'compliance', 'governance'],
@@ -296,76 +201,76 @@ ${transcript.substring(0, 8000)}`
       'Monitoring': ['monitoring', 'observability', 'logging', 'metrics', 'alerting', 'tracing'],
       'Cost Optimization': ['cost', 'optimization', 'pricing', 'billing', 'reserved instances']
     }
-    
+
     const foundTopics: string[] = []
-    const lowerTranscript = transcript.toLowerCase()
-    
+    const lowerText = text.toLowerCase()
+
     for (const [topic, keywords] of Object.entries(topicKeywords)) {
       for (const keyword of keywords) {
-        if (lowerTranscript.includes(keyword)) {
+        if (lowerText.includes(keyword)) {
           foundTopics.push(topic)
           break
         }
       }
     }
-    
+
     return [...new Set(foundTopics)]
   }
 
   /**
    * Infer technical level based on content complexity
    */
-  private inferTechnicalLevel(transcript: string): string {
-    const lowerTranscript = transcript.toLowerCase()
-    
+  private inferTechnicalLevel(text: string): 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unknown' {
+    const lowerText = text.toLowerCase()
+
     // Advanced/Expert indicators
     const advancedTerms = [
       'deep dive', 'advanced', 'expert', 'complex', 'sophisticated', 'enterprise',
       'architecture', 'optimization', 'performance tuning', 'troubleshooting',
       'custom implementation', 'advanced configuration'
     ]
-    
+
     // Introductory indicators
     const introTerms = [
       'introduction', 'getting started', 'basics', 'fundamentals', 'overview',
       'beginner', 'first time', 'simple', 'easy', 'quick start'
     ]
-    
+
     // Intermediate indicators
     const intermediateTerms = [
       'best practices', 'implementation', 'use cases', 'practical', 'hands-on',
       'real world', 'case study', 'lessons learned'
     ]
-    
+
     let advancedScore = 0
     let introScore = 0
     let intermediateScore = 0
-    
+
     for (const term of advancedTerms) {
-      if (lowerTranscript.includes(term)) advancedScore++
+      if (lowerText.includes(term)) advancedScore++
     }
-    
+
     for (const term of introTerms) {
-      if (lowerTranscript.includes(term)) introScore++
+      if (lowerText.includes(term)) introScore++
     }
-    
+
     for (const term of intermediateTerms) {
-      if (lowerTranscript.includes(term)) intermediateScore++
+      if (lowerText.includes(term)) intermediateScore++
     }
-    
+
     // Determine level based on highest score
     if (advancedScore >= 2) return 'Advanced'
     if (introScore >= 2) return 'Introductory'
     if (intermediateScore >= 1) return 'Intermediate'
-    
+
     // Default to intermediate if unclear
     return 'Intermediate'
   }
 
   /**
-   * Extract key technical terms from transcript
+   * Extract key technical terms from text
    */
-  private extractKeyTerms(transcript: string): string[] {
+  private extractKeyTerms(text: string): string[] {
     const technicalTerms = [
       // Cloud concepts
       'cloud', 'hybrid', 'multi-cloud', 'edge', 'serverless', 'containers',
@@ -376,36 +281,36 @@ ${transcript.substring(0, 8000)}`
       // Methodologies
       'agile', 'devops', 'cicd', 'infrastructure as code', 'gitops'
     ]
-    
+
     const foundTerms: string[] = []
-    const lowerTranscript = transcript.toLowerCase()
-    
+    const lowerText = text.toLowerCase()
+
     for (const term of technicalTerms) {
-      if (lowerTranscript.includes(term.toLowerCase())) {
+      if (lowerText.includes(term.toLowerCase())) {
         foundTerms.push(term)
       }
     }
-    
+
     return [...new Set(foundTerms)]
   }
 
   /**
    * Calculate confidence score based on content analysis
    */
-  private calculateConfidence(transcript: string, services: string[], topics: string[]): number {
+  private calculateConfidence(text: string, services: string[], topics: string[]): number {
     let confidence = 0.5 // Base confidence
-    
+
     // Increase confidence based on content richness
     if (services.length > 0) confidence += 0.2
     if (services.length > 2) confidence += 0.1
     if (topics.length > 0) confidence += 0.1
     if (topics.length > 2) confidence += 0.1
-    
-    // Increase confidence for longer, more detailed transcripts
-    const wordCount = transcript.split(/\s+/).length
+
+    // Increase confidence for longer, more detailed text
+    const wordCount = text.split(/\s+/).length
     if (wordCount > 500) confidence += 0.1
     if (wordCount > 1000) confidence += 0.1
-    
+
     return Math.min(confidence, 1.0)
   }
 
@@ -414,7 +319,7 @@ ${transcript.substring(0, 8000)}`
    */
   private normalizeLevel(level: string): 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unknown' {
     const normalized = level.toLowerCase().trim()
-    
+
     if (normalized.includes('intro') || normalized.includes('beginner')) {
       return 'Introductory'
     }
@@ -427,7 +332,7 @@ ${transcript.substring(0, 8000)}`
     if (normalized.includes('expert')) {
       return 'Expert'
     }
-    
+
     return 'Unknown'
   }
 
@@ -436,7 +341,7 @@ ${transcript.substring(0, 8000)}`
    */
   private normalizeSessionType(sessionType: string): 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown' {
     const normalized = sessionType.toLowerCase().trim()
-    
+
     if (normalized.includes('breakout')) {
       return 'Breakout'
     }
@@ -452,7 +357,7 @@ ${transcript.substring(0, 8000)}`
     if (normalized.includes('lightning')) {
       return 'Lightning Talk'
     }
-    
+
     return 'Unknown'
   }
 
@@ -461,7 +366,7 @@ ${transcript.substring(0, 8000)}`
    */
   private inferSessionTypeFromTranscript(transcript: string): 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown' {
     const lowerTranscript = transcript.toLowerCase()
-    
+
     if (lowerTranscript.includes('hands-on') || lowerTranscript.includes('workshop') || lowerTranscript.includes('lab')) {
       return 'Workshop'
     }
@@ -474,7 +379,7 @@ ${transcript.substring(0, 8000)}`
     if (lowerTranscript.includes('chalk talk') || lowerTranscript.includes('discussion') || lowerTranscript.includes('q&a')) {
       return 'Chalk Talk'
     }
-    
+
     // Default to Breakout for most technical sessions
     return 'Breakout'
   }
@@ -484,7 +389,7 @@ ${transcript.substring(0, 8000)}`
    */
   private inferSessionTypeFromMetadata(title: string, description: string): 'Breakout' | 'Chalk Talk' | 'Workshop' | 'Keynote' | 'Lightning Talk' | 'Unknown' {
     const combinedText = `${title} ${description}`.toLowerCase()
-    
+
     if (combinedText.includes('workshop') || combinedText.includes('hands-on') || combinedText.includes('lab')) {
       return 'Workshop'
     }
@@ -497,7 +402,7 @@ ${transcript.substring(0, 8000)}`
     if (combinedText.includes('chalk talk') || combinedText.includes('discussion')) {
       return 'Chalk Talk'
     }
-    
+
     return 'Breakout'
   }
 
@@ -505,16 +410,15 @@ ${transcript.substring(0, 8000)}`
    * Extract speakers from transcript (basic implementation)
    */
   private extractSpeakers(transcript: string): string[] {
-    // This is a basic implementation - in production, this would use more sophisticated NLP
     const speakerPatterns = [
       /speaker[:\s]+([a-z\s]+)/gi,
       /presented by[:\s]+([a-z\s]+)/gi,
       /my name is ([a-z\s]+)/gi,
       /i'm ([a-z\s]+)/gi
     ]
-    
+
     const speakers: string[] = []
-    
+
     for (const pattern of speakerPatterns) {
       const matches = transcript.matchAll(pattern)
       for (const match of matches) {
@@ -526,7 +430,7 @@ ${transcript.substring(0, 8000)}`
         }
       }
     }
-    
+
     return [...new Set(speakers)]
   }
 
@@ -535,7 +439,7 @@ ${transcript.substring(0, 8000)}`
    */
   private extractSpeakersFromMetadata(title: string, description: string): string[] {
     const combinedText = `${title} ${description}`
-    
+
     // Look for common patterns in video titles/descriptions
     const speakerPatterns = [
       /with ([A-Z][a-z]+ [A-Z][a-z]+)/g,
@@ -543,9 +447,9 @@ ${transcript.substring(0, 8000)}`
       /speaker[:\s]+([A-Z][a-z]+ [A-Z][a-z]+)/gi,
       /presented by[:\s]+([A-Z][a-z]+ [A-Z][a-z]+)/gi
     ]
-    
+
     const speakers: string[] = []
-    
+
     for (const pattern of speakerPatterns) {
       const matches = combinedText.matchAll(pattern)
       for (const match of matches) {
@@ -557,24 +461,22 @@ ${transcript.substring(0, 8000)}`
         }
       }
     }
-    
+
     return [...new Set(speakers)]
   }
 
   /**
    * Extract session level from video title using session codes
    * Maps level indicators (1xx, 2xx, 3xx, 4xx) to difficulty levels
-   * @param title - Video title to extract level from
-   * @returns SessionLevel - Extracted level or 'Unknown' if not found
    */
   extractLevelFromTitle(title: string): 'Introductory' | 'Intermediate' | 'Advanced' | 'Expert' | 'Unknown' {
     // Look for session codes like "GBL206", "WPS301", "SEC401", etc.
     const sessionCodePattern = /\b[A-Z]{2,4}(\d)(\d{2})\b/g
     const matches = title.matchAll(sessionCodePattern)
-    
+
     for (const match of matches) {
       const levelDigit = parseInt(match[1])
-      
+
       switch (levelDigit) {
         case 1:
           return 'Introductory'
@@ -588,7 +490,7 @@ ${transcript.substring(0, 8000)}`
           continue // Try next match if any
       }
     }
-    
+
     return 'Unknown'
   }
 }
