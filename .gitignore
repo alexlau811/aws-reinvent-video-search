@@ -154,6 +154,9 @@ packages/client-app/public/database/*.db
 packages/client-app/public/database/*.db.gz
 packages/client-app/public/database/*.json
 
+# Allow the main database file for GitHub Pages
+!packages/client-app/public/database/reinvent-videos.db
+
 # Metrics and stats files
 *.metrics.json
 *.stats.json
