@@ -142,6 +142,44 @@ function App() {
             <BrowseInterface database={database} />
           )}
         </main>
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 mt-12">
+          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div className="text-center text-sm text-gray-500">
+              <p>
+                Created by{' '}
+                <a 
+                  href="https://kiro.ai" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Kiro
+                </a>
+                {' '}with the prompts from{' '}
+                <a 
+                  href="https://builder.aws.com/community/@alexlau811" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Alex Lau
+                </a>
+              </p>
+              <p className="mt-1">
+                <a 
+                  href="https://github.com/alexlau811/aws-reinvent-video-search" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  GitHub Sources
+                </a>
+              </p>
+            </div>
+          </div>
+        </footer>
       </div>
     </ErrorBoundary>
   )
