@@ -150,7 +150,20 @@ The pipeline extracts metadata using keyword/regex patterns:
 
 ## Deployment
 
-### Build Production Client
+### GitHub Pages (Automatic)
+
+The client app is automatically deployed to GitHub Pages on every push to the main branch:
+
+🚀 **Live Demo**: https://alexlau811.github.io/aws-reinvent-video-search/
+
+The deployment workflow:
+1. Builds the client app with production settings
+2. Deploys to GitHub Pages automatically
+3. Available at the URL above within minutes of pushing changes
+
+### Manual Deployment Options
+
+#### Build Production Client
 
 ```bash
 cd packages/client-app
